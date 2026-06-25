@@ -100,6 +100,7 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
       const data = await res.json();
       if (typeof data.score === "number") setScore(album.id, data.score);
       if (typeof data.voterCount === "number") setVoterCount(album.id, data.voterCount);
+      setVoters(null); // invalidate so next hover re-fetches with updated vote
     } catch { /* silent */ }
   }
 

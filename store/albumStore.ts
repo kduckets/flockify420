@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { GifComment } from '@/types'
+import type { Album, GifComment } from '@/types'
 
 // vote values: -1 = downvote, 1 = upvote, 2 = star (counts as 2 upvotes)
 export type VoteValue = -1 | 1 | 2
@@ -11,6 +11,7 @@ interface AlbumStore {
   votes: Partial<Record<string, VoteValue>>
   comments: Record<string, GifComment[]>
   favoritedAlbums: string[]
+  dynamicAlbums: Album[]
   setVote: (albumId: string, vote: VoteValue | 0) => void
   loadVotes: (incoming: Record<string, VoteValue>) => void
   setComments: (albumId: string, comments: GifComment[]) => void
@@ -18,6 +19,9 @@ interface AlbumStore {
   removeComment: (albumId: string, commentId: string) => void
   toggleFavorited: (albumId: string) => void
   loadFavorited: (albumIds: string[]) => void
+  setDynamicAlbums: (albums: Album[]) => void
+  addDynamicAlbum: (album: Album) => void
+  removeDynamicAlbum: (id: string) => void
 }
 
 export const useAlbumStore = create<AlbumStore>()(
@@ -26,6 +30,7 @@ export const useAlbumStore = create<AlbumStore>()(
       votes: {} as Partial<Record<string, VoteValue>>,
       comments: {},
       favoritedAlbums: [],
+      dynamicAlbums: [],
       setVote: (albumId, vote) =>
         set((state) => {
           const next = { ...state.votes }
@@ -61,6 +66,11 @@ export const useAlbumStore = create<AlbumStore>()(
         })),
       loadFavorited: (albumIds) =>
         set(() => ({ favoritedAlbums: albumIds })),
+      setDynamicAlbums: (albums) => set(() => ({ dynamicAlbums: albums })),
+      addDynamicAlbum: (album) =>
+        set((state) => ({ dynamicAlbums: [album, ...state.dynamicAlbums] })),
+      removeDynamicAlbum: (id) =>
+        set((state) => ({ dynamicAlbums: state.dynamicAlbums.filter((a) => a.id !== id) })),
     }),
     { name: 'flockify420-store' }
   )

@@ -34,14 +34,17 @@ export function Feed({ albums }: FeedProps) {
   const [searchOpen, setSearchOpen]     = useState(false);
   const [searchQuery, setSearchQuery]   = useState("");
   const [showPostModal, setShowPostModal] = useState(false);
-  const [dynamicAlbums, setDynamicAlbums] = useState<Album[]>([]);
-  const searchRef                       = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
   const votes           = useAlbumStore((s) => s.votes);
   const comments        = useAlbumStore((s) => s.comments);
   const favoritedAlbums = useAlbumStore((s) => s.favoritedAlbums);
   const loadVotes       = useAlbumStore((s) => s.loadVotes);
+  const dynamicAlbums     = useAlbumStore((s) => s.dynamicAlbums);
+  const setDynamicAlbums  = useAlbumStore((s) => s.setDynamicAlbums);
+  const addDynamicAlbum   = useAlbumStore((s) => s.addDynamicAlbum);
+  const removeDynamicAlbum = useAlbumStore((s) => s.removeDynamicAlbum);
 
   const scores        = useAveragesStore((s) => s.scores);
   const lastCommentAt = useAveragesStore((s) => s.lastCommentAt);
@@ -51,13 +54,13 @@ export function Feed({ albums }: FeedProps) {
   const allAlbums = useMemo(() => [...dynamicAlbums, ...albums], [dynamicAlbums, albums]);
   const albumIds  = useMemo(() => allAlbums.map((a) => a.id), [allAlbums]);
 
-  // Load dynamic posts on mount
+  // Revalidate dynamic posts in background on mount (stale-while-revalidate)
   useEffect(() => {
     fetch("/api/dynamic-posts")
       .then((r) => r.json())
       .then((data) => { if (data.albums) setDynamicAlbums(data.albums); })
       .catch(() => {});
-  }, []);
+  }, [setDynamicAlbums]);
 
   // Existing genres/labels/tags for autocomplete
   const allGenres = useMemo(() => [...new Set(allAlbums.flatMap((a) => a.genre))].sort(), [allAlbums]);
@@ -334,7 +337,7 @@ export function Feed({ albums }: FeedProps) {
                 album={album}
                 allAlbums={allAlbums}
                 onDelete={album.id.startsWith("dyn_")
-                  ? () => setDynamicAlbums((prev) => prev.filter((a) => a.id !== album.id))
+                  ? () => removeDynamicAlbum(album.id)
                   : undefined}
               />
             ))
@@ -361,7 +364,7 @@ export function Feed({ albums }: FeedProps) {
           allGenres={allGenres}
           allLabels={allLabels}
           allTags={allTags}
-          onPosted={(album) => setDynamicAlbums((prev) => [album, ...prev])}
+          onPosted={(album) => addDynamicAlbum(album)}
         />
       )}
     </div>
