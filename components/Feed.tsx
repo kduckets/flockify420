@@ -5,7 +5,7 @@ import { AlbumListCard } from "./AlbumListCard";
 import { AlbumGridCard } from "./AlbumGridCard";
 import { useAlbumStore } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
-import { getUsername } from "@/lib/identity";
+import { useAuth } from "@/context/AuthContext";
 import type { Album, SortOrder } from "@/types";
 
 interface FeedProps {
@@ -30,6 +30,7 @@ export function Feed({ albums }: FeedProps) {
   const [searchQuery, setSearchQuery]   = useState("");
   const searchRef                       = useRef<HTMLInputElement>(null);
 
+  const { user } = useAuth();
   const votes           = useAlbumStore((s) => s.votes);
   const comments        = useAlbumStore((s) => s.comments);
   const favoritedAlbums = useAlbumStore((s) => s.favoritedAlbums);
@@ -43,20 +44,25 @@ export function Feed({ albums }: FeedProps) {
 
   const refresh = useCallback(async () => {
     fetchScores(albumIds);
-    const username = getUsername();
-    if (username) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync votes whenever auth state changes (login / logout)
+  useEffect(() => {
+    if (!user?.uid) return;
+    (async () => {
       try {
         const res = await fetch("/api/my-votes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: username, albumIds }),
+          body: JSON.stringify({ userId: user.uid, albumIds }),
         });
         const data = await res.json();
         if (data.votes) loadVotes(data.votes);
       } catch { /* silent */ }
-    }
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => { refresh(); }, [refresh]);
 

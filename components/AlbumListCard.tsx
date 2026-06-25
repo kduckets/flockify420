@@ -5,7 +5,7 @@ import Image from "next/image";
 import { GifModal } from "./GifModal";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
-import { getEffectiveUserId, hasSetUsername } from "@/lib/identity";
+import { useAuth } from "@/context/AuthContext";
 import type { Album } from "@/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
@@ -24,6 +24,7 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
   const [nudge, setNudge]               = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  const { user } = useAuth();
   const vote    = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
   const setVote = useAlbumStore((s) => s.setVote);
 
@@ -77,12 +78,12 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
   }
 
   async function handleVote(newVote: VoteValue) {
-    if (!hasSetUsername()) {
+    if (!user) {
       setNudge(true);
       setTimeout(() => setNudge(false), 2500);
       return;
     }
-    const userId = getEffectiveUserId();
+    const userId = user.uid;
     const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
     setVote(album.id, next);
     try {
@@ -256,7 +257,7 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               {nudge && (
-                <span className="text-zinc-500 text-[8px] leading-tight text-center">set username</span>
+                <span className="text-zinc-500 text-[8px] leading-tight text-center">sign in</span>
               )}
             </div>
 

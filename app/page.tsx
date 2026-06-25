@@ -1,5 +1,5 @@
 import { Feed } from "@/components/Feed";
-import { UsernameButton } from "@/components/UsernameButton";
+import { LoginButton } from "@/components/LoginButton";
 import { ResetFeedButton } from "@/components/ResetFeedButton";
 import { RandomAlbumButton } from "@/components/RandomAlbumButton";
 import { FLOCKIFY_POSTS } from "@/data/flockifyPosts";
@@ -31,7 +31,7 @@ export default function Home() {
         <div />
         <div className="flex items-center gap-3 text-zinc-500">
           <RandomAlbumButton albums={albums} />
-          <UsernameButton albumIds={albums.map((a) => a.id)} />
+          <LoginButton albumIds={albums.map((a) => a.id)} />
         </div>
       </header>
 

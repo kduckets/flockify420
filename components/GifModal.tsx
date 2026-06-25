@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { getUsername, setUsername, hasSetUsername, getEffectiveUserId } from "@/lib/identity";
+import { useAuth } from "@/context/AuthContext";
 import type { Album, GifComment } from "@/types";
 
 interface GifModalProps {
@@ -64,6 +65,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const pasteRef    = useRef<HTMLInputElement>(null);
   const nameRef     = useRef<HTMLInputElement>(null);
 
+  const { user } = useAuth();
   const vote            = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
   const setVote         = useAlbumStore((s) => s.setVote);
   const favoritedAlbums  = useAlbumStore((s) => s.favoritedAlbums);
@@ -116,12 +118,12 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   useEffect(() => { if (addMode === "name-prompt") nameRef.current?.focus(); }, [addMode]);
 
   async function handleVote(newVote: VoteValue) {
-    if (!hasSetUsername()) {
+    if (!user) {
       setNudge(true);
       setTimeout(() => setNudge(false), 2500);
       return;
     }
-    const userId = getEffectiveUserId();
+    const userId = user.uid;
     const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
     setVote(album.id, next);
     try {
@@ -136,8 +138,8 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   }
 
   async function handleFavorite() {
-    const userId = getEffectiveUserId();
-    if (!userId || !hasSetUsername()) return;
+    if (!user) return;
+    const userId = user.uid;
     const next = !isFavorited;
     toggleFavorited(album.id);
     fetch("/api/collection", {
@@ -349,7 +351,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                   </span>
                 )}
 
-                {nudge && <span className="text-zinc-400 text-[10px]">Set a username first</span>}
+                {nudge && <span className="text-zinc-400 text-[10px]">Sign in to vote</span>}
 
                 {/* Favorite + streaming links */}
                 <div className="ml-auto flex items-center gap-3">
@@ -357,9 +359,9 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                     onClick={handleFavorite}
                     className={`transition-colors cursor-pointer ${
                       isFavorited ? "text-red-500" : "text-zinc-600 hover:text-zinc-300"
-                    } ${!hasSetUsername() ? "opacity-30 cursor-not-allowed" : ""}`}
+                    } ${!user ? "opacity-30 cursor-not-allowed" : ""}`}
                     aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                    title={!hasSetUsername() ? "Set a username to favorite" : isFavorited ? "Remove from favorites" : "Add to favorites"}
+                    title={!user ? "Sign in to favorite" : isFavorited ? "Remove from favorites" : "Add to favorites"}
                   >
                     <HeartIcon filled={isFavorited} />
                   </button>
