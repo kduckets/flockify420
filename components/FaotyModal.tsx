@@ -17,6 +17,7 @@ const WINNERS: Record<number, { artist: string; title: string } | null> = {
   2021: { artist: "Floating Points / Pharoah Sanders", title: "Promises" },
   2022: { artist: "Black Country, New Road", title: "Ants From Up There" },
   2023: { artist: "OSEES", title: "Intercepted Message" },
+  2025: { artist: "Geese", title: "Getting Killed" },
 };
 
 function getFaotyYear(album: Album): number | null {
