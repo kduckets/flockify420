@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "fir
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useAlbumStore } from "@/store/albumStore";
+import { getFlockifyUsername } from "@/data/uidToUsername";
 
 interface Props { albumIds: string[] }
 
@@ -96,7 +97,7 @@ export function LoginButton({ albumIds }: Props) {
 
   if (loading) return <div className="w-6 h-6 rounded-full bg-zinc-800 animate-pulse" />;
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "";
+  const displayName = (user ? getFlockifyUsername(user.uid) : null) || user?.displayName || user?.email?.split("@")[0] || "";
   const initial = displayName ? displayName[0].toUpperCase() : null;
 
   return (

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { getUsername, setUsername, hasSetUsername, getEffectiveUserId } from "@/lib/identity";
+import { getFlockifyUsername } from "@/data/uidToUsername";
 import { useAuth } from "@/context/AuthContext";
 import type { Album, GifComment } from "@/types";
 
@@ -78,7 +79,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const setLastCommentAt = useAveragesStore((s) => s.setLastCommentAt);
   const setScore        = useAveragesStore((s) => s.setScore);
 
-  const visitorId  = getEffectiveUserId();
+  const visitorId  = user?.uid ?? getEffectiveUserId();
   const spotifyUrl = album.spotifyUri || `https://open.spotify.com/search/${encodeURIComponent(`${album.title} ${album.artist}`)}`;
   const appleMusicUrl = `https://music.apple.com/search?term=${encodeURIComponent(`${album.title} ${album.artist}`)}`;
 
@@ -194,7 +195,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
         body: JSON.stringify({
           albumId: album.id,
           gifUrl: url,
-          author: getUsername(),
+          author: (user ? getFlockifyUsername(user.uid) : null) ?? getUsername(),
           visitorId,
         }),
       });

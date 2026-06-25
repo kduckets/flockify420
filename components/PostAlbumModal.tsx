@@ -6,6 +6,7 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/aut
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import type { Album } from "@/types";
+import { getFlockifyUsername } from "@/data/uidToUsername";
 
 function firebaseErrorMessage(err: unknown): string {
   if (typeof err === "object" && err !== null && "code" in err) {
@@ -251,7 +252,7 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
           labels,
           genre:  genres,
           tags,
-          creatorName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+          creatorName: getFlockifyUsername(user.uid) || user.displayName || user.email?.split("@")[0] || "Anonymous",
           userId:      user.uid,
         }),
       });
@@ -270,7 +271,7 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
         labels,
         genre:       genres,
         tags,
-        creatorName: user.displayName || user.email?.split("@")[0] || "Anonymous",
+        creatorName: getFlockifyUsername(user.uid) || user.displayName || user.email?.split("@")[0] || "Anonymous",
         createdTs:   data.createdTs,
         postOrder:   new Date(data.createdTs).getTime(),
         legacyScore: 0,
