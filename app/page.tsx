@@ -19,7 +19,7 @@ export default function Home() {
     tags: p.tags,
     creatorName: p.creatorName,
     createdTs: p.createdTs,
-    postOrder: i,
+    postOrder: new Date(p.createdTs).getTime() || i,
     legacyScore: p.score,
     legacyStars: p.stars,
   }));
