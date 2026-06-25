@@ -196,6 +196,11 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
             <div className="mt-3 flex items-center justify-between gap-2">
               <p className="text-zinc-500 text-[11px]">
                 posted by <span className="text-zinc-400">{album.creatorName || "unknown"}</span>
+                {album.createdTs && (
+                  <span className="text-zinc-600 ml-1">
+                    · {new Date(album.createdTs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                )}
               </p>
               {onDelete && album.userId && user?.uid === album.userId && (
                 <button
