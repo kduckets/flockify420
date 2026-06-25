@@ -171,12 +171,11 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   })();
 
   function startAddMode(mode: "search" | "paste") {
-    if (!hasSetUsername()) {
-      setPendingMode(mode);
-      setAddMode("name-prompt");
-    } else {
-      setAddMode(mode);
+    // If logged in or anonymous, skip the name prompt entirely
+    if (!hasSetUsername() && !user) {
+      setUsername("anon");
     }
+    setAddMode(mode);
   }
 
   function confirmName() {
@@ -286,12 +285,12 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
             </span>
           </button>
           <div className="flex items-center gap-4">
-            {myName !== null && (
+            {!user && myName !== null && (
               <button
                 onClick={() => { setAddMode("name-prompt"); setNameInput(myName); }}
                 className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors cursor-pointer"
               >
-                {myName ? myName : "Anonymous"} · <span className="text-zinc-700">change</span>
+                {myName || "anon"} · <span className="text-zinc-700">change</span>
               </button>
             )}
             <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors cursor-pointer text-lg leading-none">✕</button>
