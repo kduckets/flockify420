@@ -6,12 +6,15 @@ export async function GET(req: Request) {
   const album  = searchParams.get("album")?.trim();
   if (!artist || !album) return NextResponse.json({ genre: [], styles: [], labels: [] });
 
-  const token = process.env.DISCOGS_TOKEN;
+  const key    = process.env.DISCOGS_KEY;
+  const secret = process.env.DISCOGS_SECRET;
+  const token  = process.env.DISCOGS_TOKEN;
   const headers: Record<string, string> = {
     "User-Agent": "Flockify420/1.0 (kmditroia@gmail.com)",
     Accept: "application/json",
   };
-  if (token) headers["Authorization"] = `Discogs token=${token}`;
+  if (key && secret)  headers["Authorization"] = `Discogs key=${key}, secret=${secret}`;
+  else if (token)     headers["Authorization"] = `Discogs token=${token}`;
 
   try {
     const url = `https://api.discogs.com/database/search?type=master&release_title=${encodeURIComponent(album)}&artist=${encodeURIComponent(artist)}&per_page=5`;
