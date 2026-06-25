@@ -141,7 +141,7 @@ export function LoginButton({ albumIds }: Props) {
             {mode === "signin" ? (
               <>
                 <h3 className="text-white font-semibold text-base mb-1">Sign in to Flockify</h3>
-                <p className="text-zinc-500 text-sm mb-4">Use your original Flockify email and password.</p>
+                <p className="text-zinc-500 text-sm mb-4">Use your OG Flockify email and password.</p>
                 <form onSubmit={handleSignIn} className="space-y-3">
                   <input
                     ref={emailRef}
