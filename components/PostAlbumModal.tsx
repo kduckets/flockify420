@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import type { Album } from "@/types";
@@ -129,10 +129,12 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
   const [postError, setPostError]     = useState("");
 
   const [showLogin, setShowLogin]     = useState(false);
+  const [loginMode, setLoginMode]     = useState<"signin" | "reset">("signin");
   const [loginEmail, setLoginEmail]   = useState("");
   const [loginPass, setLoginPass]     = useState("");
   const [loginError, setLoginError]   = useState("");
   const [loginBusy, setLoginBusy]     = useState(false);
+  const [resetSent, setResetSent]     = useState(false);
 
   const queryRef    = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -159,6 +161,19 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
       setLoginEmail(""); setLoginPass("");
     } catch (err) {
       setLoginError(firebaseErrorMessage(err));
+    }
+    setLoginBusy(false);
+  }
+
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginError("");
+    setLoginBusy(true);
+    try {
+      await sendPasswordResetEmail(auth, loginEmail);
+      setResetSent(true);
+    } catch {
+      setLoginError("Couldn't send reset email — check the address and try again.");
     }
     setLoginBusy(false);
   }
@@ -313,42 +328,69 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
               </div>
             )}
 
-            {/* Inline sign-in form */}
+            {/* Inline sign-in / reset form */}
             {!user && showLogin && (
               <div className="px-5 py-4 bg-zinc-900 border-b border-zinc-800">
-                <p className="text-white font-semibold text-sm mb-3">Sign in to Flockify</p>
-                <form onSubmit={handleLogin} className="space-y-2.5">
-                  <input
-                    ref={emailRef}
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="Email"
-                    autoComplete="email"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
-                  />
-                  <input
-                    type="password"
-                    value={loginPass}
-                    onChange={(e) => setLoginPass(e.target.value)}
-                    placeholder="Password"
-                    autoComplete="current-password"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
-                  />
-                  {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
-                  <div className="flex gap-2 pt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => { setShowLogin(false); setLoginError(""); }}
-                      className="flex-1 py-1.5 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors"
-                    >Cancel</button>
-                    <button
-                      type="submit"
-                      disabled={loginBusy || !loginEmail || !loginPass}
-                      className="flex-1 py-1.5 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >{loginBusy ? "Signing in…" : "Sign in"}</button>
-                  </div>
-                </form>
+                {loginMode === "signin" ? (
+                  <>
+                    <p className="text-white font-semibold text-sm mb-3">Sign in to Flockify</p>
+                    <form onSubmit={handleLogin} className="space-y-2.5">
+                      <input
+                        ref={emailRef}
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="Email"
+                        autoComplete="email"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                      />
+                      <input
+                        type="password"
+                        value={loginPass}
+                        onChange={(e) => setLoginPass(e.target.value)}
+                        placeholder="Password"
+                        autoComplete="current-password"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                      />
+                      {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+                      <button
+                        type="button"
+                        onClick={() => { setLoginMode("reset"); setLoginError(""); setResetSent(false); }}
+                        className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors cursor-pointer"
+                      >Forgot password?</button>
+                      <div className="flex gap-2 pt-0.5">
+                        <button type="button" onClick={() => { setShowLogin(false); setLoginError(""); }} className="flex-1 py-1.5 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Cancel</button>
+                        <button type="submit" disabled={loginBusy || !loginEmail || !loginPass} className="flex-1 py-1.5 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{loginBusy ? "Signing in…" : "Sign in"}</button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-white font-semibold text-sm mb-3">Reset password</p>
+                    {resetSent ? (
+                      <>
+                        <p className="text-green-400 text-sm mb-3">Reset email sent to <span className="text-white">{loginEmail}</span>. Check your inbox.</p>
+                        <button onClick={() => { setLoginMode("signin"); setResetSent(false); }} className="w-full py-1.5 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Back to sign in</button>
+                      </>
+                    ) : (
+                      <form onSubmit={handleReset} className="space-y-2.5">
+                        <input
+                          type="email"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="Email"
+                          autoComplete="email"
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                        />
+                        {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+                        <div className="flex gap-2 pt-0.5">
+                          <button type="button" onClick={() => { setLoginMode("signin"); setLoginError(""); }} className="flex-1 py-1.5 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Back</button>
+                          <button type="submit" disabled={loginBusy || !loginEmail} className="flex-1 py-1.5 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{loginBusy ? "Sending…" : "Send reset email"}</button>
+                        </div>
+                      </form>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
@@ -459,7 +501,7 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
 
               {/* Genre */}
               <div>
-                <label className="block text-zinc-400 text-xs mb-1.5 font-medium flex items-center gap-1.5">
+                <label className="flex items-center gap-1.5 text-zinc-400 text-xs mb-1.5 font-medium">
                   Genre
                   {enriching && <span className="text-zinc-600 text-[10px]">fetching from Discogs…</span>}
                 </label>
@@ -468,7 +510,7 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
 
               {/* Labels */}
               <div>
-                <label className="block text-zinc-400 text-xs mb-1.5 font-medium flex items-center gap-1.5">
+                <label className="flex items-center gap-1.5 text-zinc-400 text-xs mb-1.5 font-medium">
                   Labels
                   {enriching && <span className="text-zinc-600 text-[10px]">fetching…</span>}
                 </label>

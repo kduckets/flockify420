@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useAlbumStore } from "@/store/albumStore";
@@ -21,12 +21,14 @@ function firebaseErrorMessage(err: unknown): string {
 
 export function LoginButton({ albumIds }: Props) {
   const { user, loading } = useAuth();
-  const [open, setOpen]           = useState(false);
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [error, setError]         = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [syncing, setSyncing]     = useState(false);
+  const [open, setOpen]               = useState(false);
+  const [mode, setMode]               = useState<"signin" | "reset">("signin");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
+  const [error, setError]             = useState("");
+  const [resetSent, setResetSent]     = useState(false);
+  const [submitting, setSubmitting]   = useState(false);
+  const [syncing, setSyncing]         = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
   const loadVotes     = useAlbumStore((s) => s.loadVotes);
@@ -64,6 +66,29 @@ export function LoginButton({ albumIds }: Props) {
     setSubmitting(false);
   }
 
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch (err) {
+      if (typeof err === "object" && err !== null && "code" in err) {
+        const code = (err as { code: string }).code;
+        if (code === "auth/user-not-found" || code === "auth/invalid-email")
+          setError("No account found with that email.");
+        else setError("Couldn't send reset email — try again.");
+      } else setError("Couldn't send reset email — try again.");
+    }
+    setSubmitting(false);
+  }
+
+  function openModal() {
+    setMode("signin"); setError(""); setResetSent(false);
+    setOpen(true); setTimeout(() => emailRef.current?.focus(), 50);
+  }
+
   async function handleSignOut() {
     await signOut(auth);
     setOpen(false);
@@ -77,7 +102,7 @@ export function LoginButton({ albumIds }: Props) {
   return (
     <>
       <button
-        onClick={() => { setOpen(true); setTimeout(() => emailRef.current?.focus(), 50); }}
+        onClick={openModal}
         className="flex items-center gap-1.5 cursor-pointer group"
         aria-label={user ? `Signed in as ${displayName}` : "Sign in"}
         title={user ? displayName : "Sign in to vote"}
@@ -96,49 +121,76 @@ export function LoginButton({ albumIds }: Props) {
         {syncing && <span className="text-zinc-600 text-[10px]">syncing…</span>}
       </button>
 
-      {/* Sign-in modal */}
+      {/* Sign-in / reset modal */}
       {open && !user && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
           <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6 w-full max-w-sm mx-4 shadow-2xl">
-            <h3 className="text-white font-semibold text-base mb-1">Sign in to Flockify</h3>
-            <p className="text-zinc-500 text-sm mb-4 leading-relaxed">
-              Use your original Flockify email and password.
-            </p>
-            <form onSubmit={handleSignIn} className="space-y-3">
-              <input
-                ref={emailRef}
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                autoComplete="email"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                autoComplete="current-password"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
-              />
-              {error && <p className="text-red-400 text-xs">{error}</p>}
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 py-2 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors"
-                >Cancel</button>
-                <button
-                  type="submit"
-                  disabled={submitting || !email || !password}
-                  className="flex-1 py-2 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >{submitting ? "Signing in…" : "Sign in"}</button>
-              </div>
-            </form>
+            {mode === "signin" ? (
+              <>
+                <h3 className="text-white font-semibold text-base mb-1">Sign in to Flockify</h3>
+                <p className="text-zinc-500 text-sm mb-4">Use your original Flockify email and password.</p>
+                <form onSubmit={handleSignIn} className="space-y-3">
+                  <input
+                    ref={emailRef}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                    autoComplete="email"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                  />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    autoComplete="current-password"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                  />
+                  {error && <p className="text-red-400 text-xs">{error}</p>}
+                  <button
+                    type="button"
+                    onClick={() => { setMode("reset"); setError(""); setResetSent(false); }}
+                    className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors cursor-pointer"
+                  >Forgot password?</button>
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" onClick={() => setOpen(false)} className="flex-1 py-2 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Cancel</button>
+                    <button type="submit" disabled={submitting || !email || !password} className="flex-1 py-2 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{submitting ? "Signing in…" : "Sign in"}</button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <h3 className="text-white font-semibold text-base mb-1">Reset password</h3>
+                <p className="text-zinc-500 text-sm mb-4">We&apos;ll send a reset link to your email.</p>
+                {resetSent ? (
+                  <>
+                    <p className="text-green-400 text-sm mb-4">Check your inbox — reset email sent to <span className="text-white">{email}</span>.</p>
+                    <button onClick={() => { setMode("signin"); setResetSent(false); }} className="w-full py-2 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Back to sign in</button>
+                  </>
+                ) : (
+                  <form onSubmit={handleReset} className="space-y-3">
+                    <input
+                      ref={emailRef}
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email"
+                      autoComplete="email"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                    />
+                    {error && <p className="text-red-400 text-xs">{error}</p>}
+                    <div className="flex gap-2 pt-1">
+                      <button type="button" onClick={() => { setMode("signin"); setError(""); }} className="flex-1 py-2 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Back</button>
+                      <button type="submit" disabled={submitting || !email} className="flex-1 py-2 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">{submitting ? "Sending…" : "Send reset email"}</button>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
