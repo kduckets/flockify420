@@ -7,7 +7,7 @@ import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { useUIStore } from "@/store/uiStore";
 import { useAuth } from "@/context/AuthContext";
-import { uidToUsername } from "@/data/uidToUsername";
+import { uidToUsername, getFlockifyUsername } from "@/data/uidToUsername";
 import type { Album } from "@/types";
 
 function displayName(userId: string) {
@@ -91,7 +91,9 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
       openSignInModal();
       return;
     }
+    const flockifyName = getFlockifyUsername(user.uid);
     if (album.userId && user.uid === album.userId) return;
+    if (flockifyName && album.creatorName && flockifyName.toLowerCase() === album.creatorName.toLowerCase()) return;
     const userId = user.uid;
     const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
     setVote(album.id, next);

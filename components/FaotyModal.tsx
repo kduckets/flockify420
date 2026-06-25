@@ -6,6 +6,7 @@ import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { useUIStore } from "@/store/uiStore";
 import { useAuth } from "@/context/AuthContext";
+import { getFlockifyUsername } from "@/data/uidToUsername";
 import type { Album } from "@/types";
 
 export const WINNERS: Record<number, { artist: string; title: string } | null> = {
@@ -68,7 +69,9 @@ function NomineeCard({ album, year }: NomineeCardProps) {
 
   async function handleVote(newVote: VoteValue) {
     if (!user) { openSignInModal(); return; }
+    const flockifyName = getFlockifyUsername(user.uid);
     if (album.userId && user.uid === album.userId) return;
+    if (flockifyName && album.creatorName && flockifyName.toLowerCase() === album.creatorName.toLowerCase()) return;
     const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
     setVote(album.id, next);
     try {

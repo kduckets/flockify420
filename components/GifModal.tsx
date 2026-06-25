@@ -128,6 +128,9 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
       openSignInModal();
       return;
     }
+    const flockifyName = getFlockifyUsername(user.uid);
+    if (album.userId && user.uid === album.userId) return;
+    if (flockifyName && album.creatorName && flockifyName.toLowerCase() === album.creatorName.toLowerCase()) return;
     const userId = user.uid;
     const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
     setVote(album.id, next);
