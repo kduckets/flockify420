@@ -26,8 +26,16 @@ export function parseHgetall(arr: unknown): Record<string, string> {
 }
 
 // Compute score + voter count from a HGETALL result (values are -1, 1, or 2)
+// __offset__ is a hidden field storing uncaptured legacy score contributions
 export function scoreFromHgetall(arr: unknown): { score: number; count: number } {
   const map = parseHgetall(arr);
-  const vals = Object.values(map).map(Number).filter((n) => n === -1 || n === 1 || n === 2);
-  return { score: vals.reduce((a, b) => a + b, 0), count: vals.length };
+  const offset = Number(map["__offset__"] ?? 0);
+  let score = isNaN(offset) ? 0 : offset;
+  let count = 0;
+  for (const [key, val] of Object.entries(map)) {
+    if (key === "__offset__") continue;
+    const n = Number(val);
+    if (n === -1 || n === 1 || n === 2) { score += n; count++; }
+  }
+  return { score, count };
 }
