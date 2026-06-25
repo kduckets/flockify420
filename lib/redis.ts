@@ -25,10 +25,9 @@ export function parseHgetall(arr: unknown): Record<string, string> {
   return result;
 }
 
-// Compute average from a HGETALL result (values are 0–100)
-export function avgFromHgetall(arr: unknown): number | null {
+// Compute score + voter count from a HGETALL result (values are -1, 1, or 2)
+export function scoreFromHgetall(arr: unknown): { score: number; count: number } {
   const map = parseHgetall(arr);
-  const vals = Object.values(map).map(Number).filter((n) => !isNaN(n) && n > 0 && n <= 100);
-  if (vals.length === 0) return null;
-  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  const vals = Object.values(map).map(Number).filter((n) => n === -1 || n === 1 || n === 2);
+  return { score: vals.reduce((a, b) => a + b, 0), count: vals.length };
 }

@@ -3,17 +3,16 @@
 import { useState } from "react";
 import Image from "next/image";
 import { GifModal } from "./GifModal";
-import { useAlbumStore } from "@/store/albumStore";
+import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import type { Album } from "@/types";
-
-const FALLBACK_IMG = "/miles-davis.png";
 
 export function AlbumGridCard({ album, allAlbums }: { album: Album; allAlbums: Album[] }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [artErr, setArtErr] = useState(false);
-  const rating       = useAlbumStore((s) => s.ratings[album.id] ?? 0);
-  const average      = useAveragesStore((s) => s.averages[album.id] ?? 0);
+  const vote         = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
+  const score        = useAveragesStore((s) => s.scores[album.id] ?? 0);
+  const voterCount   = useAveragesStore((s) => s.voterCounts[album.id] ?? 0);
   const commentCount = useAveragesStore((s) => s.commentCounts[album.id] ?? 0);
 
   return (
@@ -21,33 +20,34 @@ export function AlbumGridCard({ album, allAlbums }: { album: Album; allAlbums: A
       <button
         onClick={() => setModalOpen(true)}
         className="relative aspect-square w-full overflow-hidden rounded bg-zinc-900 cursor-pointer group block"
-        title={`${album.title} (${album.year})`}
+        title={`${album.artist} – ${album.title}${album.year ? ` (${album.year})` : ""}`}
       >
         <Image
-          src={artErr || !album.artworkUrl ? FALLBACK_IMG : album.artworkUrl}
+          src={artErr || !album.artworkUrl ? "/flockify.png" : album.artworkUrl}
           alt={album.title}
           fill
           className="object-cover transition-opacity duration-150 group-hover:opacity-70"
           sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
+          unoptimized
           onError={() => setArtErr(true)}
         />
 
-        {/* Bottom info strip — always visible */}
+        {/* Bottom info strip */}
         <div className="absolute bottom-0 left-0 right-0 bg-black/75 flex items-center justify-between px-1.5 py-1 gap-1">
-          {/* Community average */}
+          {/* Community score */}
           <div className="flex items-center gap-0.5 min-w-0">
-            <span className="text-amber-400 text-[10px] leading-none">★</span>
-            <span className="text-white text-[10px] font-semibold leading-none tabular-nums">
-              {average > 0 ? Math.round(average) : "—"}
+            <span className={`text-[10px] font-bold leading-none tabular-nums ${score > 0 ? "text-green-400" : score < 0 ? "text-red-400" : "text-zinc-500"}`}>
+              {voterCount > 0 ? (score >= 0 ? `+${score}` : String(score)) : "—"}
             </span>
           </div>
 
-          {/* User rating bar — continuous fill */}
-          <div className="flex-1 mx-1 h-1 rounded-full bg-white/15 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-amber-400/90 transition-all duration-300"
-              style={{ width: rating > 0 ? `${rating}%` : "0%" }}
-            />
+          {/* User vote indicator */}
+          <div className="flex-1 mx-1 flex justify-center">
+            {vote !== 0 && (
+              <span className={`text-[10px] font-bold leading-none ${vote === 2 ? "text-amber-400" : vote === 1 ? "text-green-400" : "text-red-400"}`}>
+                {vote === 2 ? "★" : vote === 1 ? "▲" : "▼"}
+              </span>
+            )}
           </div>
 
           {/* Comment count */}
@@ -64,10 +64,7 @@ export function AlbumGridCard({ album, allAlbums }: { album: Album; allAlbums: A
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 pointer-events-none">
           <p className="text-white text-[11px] font-semibold leading-snug line-clamp-2">{album.title}</p>
-          <p className="text-zinc-400 text-[10px]">
-            {album.year || "—"}
-            {album.type !== "studio" && <span className="ml-1 text-zinc-600 capitalize">{album.type}</span>}
-          </p>
+          <p className="text-zinc-400 text-[10px]">{album.artist}</p>
         </div>
       </button>
 

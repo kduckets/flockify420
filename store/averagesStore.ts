@@ -2,46 +2,46 @@
 
 import { create } from "zustand";
 
-interface AveragesStore {
-  averages: Record<string, number>;
+interface ScoresStore {
+  scores: Record<string, number>;
   commentCounts: Record<string, number>;
   lastCommentAt: Record<string, number>;
-  raterCounts: Record<string, number>;
-  fetchAverages: (albumIds: string[]) => Promise<void>;
-  setAverage: (albumId: string, avg: number | null) => void;
+  voterCounts: Record<string, number>;
+  fetchScores: (albumIds: string[]) => Promise<void>;
+  setScore: (albumId: string, score: number | null) => void;
   setCommentCount: (albumId: string, count: number) => void;
   setLastCommentAt: (albumId: string, ts: number) => void;
 }
 
-export const useAveragesStore = create<AveragesStore>((set) => ({
-  averages: {},
+export const useAveragesStore = create<ScoresStore>((set) => ({
+  scores: {},
   commentCounts: {},
   lastCommentAt: {},
-  raterCounts: {},
+  voterCounts: {},
 
-  fetchAverages: async (albumIds) => {
+  fetchScores: async (albumIds) => {
     try {
-      const res = await fetch("/api/averages", {
+      const res = await fetch("/api/scores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: albumIds }),
       });
       const data = await res.json();
       set({
-        averages: data.averages ?? {},
+        scores: data.scores ?? {},
         commentCounts: data.commentCounts ?? {},
         lastCommentAt: data.lastCommentAt ?? {},
-        raterCounts: data.raterCounts ?? {},
+        voterCounts: data.voterCounts ?? {},
       });
     } catch { /* silently ignore */ }
   },
 
-  setAverage: (albumId, avg) =>
+  setScore: (albumId, score) =>
     set((state) => {
-      const next = { ...state.averages };
-      if (avg === null) delete next[albumId];
-      else next[albumId] = avg;
-      return { averages: next };
+      const next = { ...state.scores };
+      if (score === null) delete next[albumId];
+      else next[albumId] = score;
+      return { scores: next };
     }),
 
   setCommentCount: (albumId, count) =>

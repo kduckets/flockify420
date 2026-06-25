@@ -1,22 +1,19 @@
-export type AlbumType = 'studio' | 'live' | 'compilation'
-
 export interface Album {
   id: string
   title: string
+  artist: string
   year: number
-  batchId: string
   artworkUrl: string
-  label?: string
-  type: AlbumType
+  spotifyUri: string
   description?: string
-  postOrder?: number
-}
-
-export interface Batch {
-  id: string
-  name: string
-  description: string
-  albums: Album[]
+  labels: string[]
+  genre: string[]
+  tags: string[]
+  creatorName: string
+  createdTs: string
+  postOrder: number
+  legacyScore: number
+  legacyStars: number
 }
 
 export interface GifComment {
@@ -24,10 +21,8 @@ export interface GifComment {
   albumId: string
   gifUrl: string
   timestamp: number
-  author: string      // "" means anonymous
-  visitorId: string   // owner identifier
+  author: string
+  visitorId: string
 }
 
-export type SortOrder  = 'new' | 'top' | 'comments'
-export type EraFilter  = 'all' | '50s' | '60s' | '70s' | '80s' | '90s' | '2000s+'
-export type TypeFilter = 'all' | 'studio' | 'live' | 'compilation'
+export type SortOrder = 'new' | 'top' | 'comments'

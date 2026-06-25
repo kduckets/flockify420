@@ -14,25 +14,25 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "flockify: discographies",
-    template: "%s | flockify: discographies",
+    default: "Flockify 4.2.0",
+    template: "%s | Flockify 4.2.0",
   },
-  description: "Like flockify, but with discographies.",
+  description: "Flockify in the robot era.",
   icons: {
     icon: "/flockify-icon-only.png",
     apple: "/flockify-icon-only.png",
   },
   openGraph: {
-    title: "flockify: discographies",
-    description: "Like flockify, but with discographies.",
-    siteName: "flockify: discographies",
+    title: "Flockify 4.2.0",
+    description: "Flockify in the robot era.",
+    siteName: "Flockify 4.2.0",
     type: "website",
     images: [{ url: "/flockify-icon-only.png" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "flockify: discographies",
-    description: "Like flockify, but with discographies.",
+    title: "Flockify 4.2.0",
+    description: "Flockify in the robot era.",
     images: ["/flockify-icon-only.png"],
   },
 };

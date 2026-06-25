@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { InlineStarRating } from "./InlineStarRating";
 import { GifModal } from "./GifModal";
-import { useAlbumStore } from "@/store/albumStore";
+import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
-import { getEffectiveUserId } from "@/lib/identity";
+import { getEffectiveUserId, hasSetUsername } from "@/lib/identity";
 import type { Album } from "@/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
@@ -17,97 +16,94 @@ interface AlbumListCardProps {
   allAlbums: Album[];
 }
 
-const FALLBACK_IMG = "/miles-davis.png";
-
 export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
   const [gifModalOpen, setGifModalOpen] = useState(false);
   const [artworkError, setArtworkError] = useState(false);
-  const [showRaters, setShowRaters] = useState(false);
-  const [raters, setRaters] = useState<{ userId: string; rating: number }[] | null>(null);
+  const [showVoters, setShowVoters]     = useState(false);
+  const [voters, setVoters]             = useState<{ userId: string; vote: number }[] | null>(null);
+  const [nudge, setNudge]               = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const rating = useAlbumStore((s) => s.ratings[album.id] ?? 0);
+  const vote    = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
+  const setVote = useAlbumStore((s) => s.setVote);
 
-  const average       = useAveragesStore((s) => s.averages[album.id] ?? 0);
-  const commentCount  = useAveragesStore((s) => s.commentCounts[album.id] ?? 0);
-  const raterCount    = useAveragesStore((s) => s.raterCounts[album.id] ?? 0);
-  const setAverage    = useAveragesStore((s) => s.setAverage);
+  const score       = useAveragesStore((s) => s.scores[album.id] ?? 0);
+  const voterCount  = useAveragesStore((s) => s.voterCounts[album.id] ?? 0);
+  const commentCount = useAveragesStore((s) => s.commentCounts[album.id] ?? 0);
+  const setScore    = useAveragesStore((s) => s.setScore);
 
-  // Animate the score circle counting up/down to the community average
-  const [displayAvg, setDisplayAvg] = useState(0);
-  const animRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const targetAvg = Math.round(average); // integer for animation steps
+  const [displayScore, setDisplayScore] = useState(0);
+  const animRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const targetScore = score;
 
   useEffect(() => {
     if (animRef.current) clearInterval(animRef.current);
-    if (targetAvg === displayAvg) return;
+    if (targetScore === displayScore) return;
     animRef.current = setInterval(() => {
-      setDisplayAvg((prev) => {
-        const diff = targetAvg - prev;
-        const step = Math.sign(diff) * Math.max(1, Math.ceil(Math.abs(diff) / 15));
+      setDisplayScore((prev) => {
+        const diff = targetScore - prev;
+        const step = Math.sign(diff) * Math.max(1, Math.ceil(Math.abs(diff) / 10));
         const next = prev + step;
-        if ((step > 0 && next >= targetAvg) || (step < 0 && next <= targetAvg)) {
+        if ((step > 0 && next >= targetScore) || (step < 0 && next <= targetScore)) {
           clearInterval(animRef.current!);
-          return targetAvg;
+          return targetScore;
         }
         return next;
       });
-    }, 24);
+    }, 30);
     return () => { if (animRef.current) clearInterval(animRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetAvg]);
+  }, [targetScore]);
 
-  // Submit the user's rating to the server whenever it changes (skip initial mount)
-  const prevRating = useRef<number | null>(null);
+  // Close voters popover when clicking outside
   useEffect(() => {
-    if (prevRating.current === null) { prevRating.current = rating; return; }
-    if (prevRating.current === rating) return;
-    prevRating.current = rating;
-
-    const userId = getEffectiveUserId();
-    if (!userId) return;
-    fetch("/api/rate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ albumId: album.id, userId, rating }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (typeof data.average === "number") setAverage(album.id, data.average);
-        else setAverage(album.id, null);
-      })
-      .catch(() => {});
-  }, [rating, album.id, setAverage]);
-
-  // Close raters popover when clicking outside
-  useEffect(() => {
-    if (!showRaters) return;
+    if (!showVoters) return;
     function handler(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) setShowRaters(false);
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) setShowVoters(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [showRaters]);
+  }, [showVoters]);
 
-  async function openRaters() {
-    setShowRaters(true);
-    if (raters !== null) return;
+  async function openVoters() {
+    setShowVoters(true);
+    if (voters !== null) return;
     const res = await fetch(`/api/album-ratings?albumId=${encodeURIComponent(album.id)}`);
     const data = await res.json();
     const list = Object.entries(data.ratings as Record<string, number>)
-      .map(([userId, r]) => ({ userId, rating: r }))
-      .sort((a, b) => b.rating - a.rating);
-    setRaters(list);
+      .map(([userId, v]) => ({ userId, vote: v }))
+      .sort((a, b) => b.vote - a.vote);
+    setVoters(list);
   }
 
-  const spotifyUrl = `https://open.spotify.com/search/${encodeURIComponent(
-    `${album.title} Miles Davis`
-  )}`;
+  async function handleVote(newVote: VoteValue) {
+    if (!hasSetUsername()) {
+      setNudge(true);
+      setTimeout(() => setNudge(false), 2500);
+      return;
+    }
+    const userId = getEffectiveUserId();
+    const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
+    setVote(album.id, next);
+    try {
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ albumId: album.id, userId, vote: next }),
+      });
+      const data = await res.json();
+      if (typeof data.score === "number") setScore(album.id, data.score);
+    } catch { /* silent */ }
+  }
+
+  const voteLabel = (v: number) => v === 2 ? "★" : v === 1 ? "+1" : v === -1 ? "−1" : "—";
+
+  const spotifyUrl = album.spotifyUri || `https://open.spotify.com/search/${encodeURIComponent(`${album.title} ${album.artist}`)}`;
 
   return (
     <>
       <div className="flex flex-col sm:flex-row group overflow-hidden rounded sm:rounded-none">
-        {/* Album art — click opens comments modal */}
+        {/* Album art */}
         <button
           onClick={() => setGifModalOpen(true)}
           className="relative w-full aspect-square sm:aspect-auto sm:w-[38%] sm:min-h-60 shrink-0 overflow-hidden block cursor-pointer"
@@ -120,16 +116,13 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
               fill
               className="object-cover transition-opacity duration-200 group-hover:opacity-90"
               sizes="(max-width: 640px) 100vw, 38vw"
+              unoptimized
               onError={() => setArtworkError(true)}
             />
           ) : (
-            <Image
-              src={FALLBACK_IMG}
-              alt="Miles Davis"
-              fill
-              className="object-cover object-top transition-opacity duration-200 group-hover:opacity-90"
-              sizes="(max-width: 640px) 100vw, 38vw"
-            />
+            <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+              <span className="text-zinc-700 text-4xl">♪</span>
+            </div>
           )}
         </button>
 
@@ -139,7 +132,7 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
           {/* Content panel */}
           <div className="flex-1 bg-white flex flex-col justify-between p-5 min-w-0">
             <div>
-              <p className="text-[#3a7cc5] font-bold text-sm tracking-wide">Miles Davis</p>
+              <p className="text-[#3a7cc5] font-bold text-sm tracking-wide">{album.artist}</p>
               <a
                 href={spotifyUrl}
                 target="_blank"
@@ -149,19 +142,17 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                 {album.title}{album.year ? ` (${album.year})` : ""}
               </a>
 
-              {/* Label tags */}
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
-                {album.label && (
-                  <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{album.label}</span>
-                )}
-                <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">Jazz</span>
-                {album.year >= 1969 && album.year <= 1975 && (
-                  <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">Fusion</span>
-                )}
-                {album.year >= 1951 && album.year <= 1961 && (
-                  <span className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">Hard Bop</span>
-                )}
-              </div>
+              {/* Tags */}
+              {(album.labels.length > 0 || album.genre.length > 0) && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {album.genre.slice(0, 2).map((g) => (
+                    <span key={g} className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{g}</span>
+                  ))}
+                  {album.labels.slice(0, 1).map((l) => (
+                    <span key={l} className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{l}</span>
+                  ))}
+                </div>
+              )}
 
               {/* Description */}
               {album.description && (
@@ -170,58 +161,89 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                 </p>
               )}
 
-              {/* Rating slider */}
-              <div className="mt-4">
-                <InlineStarRating albumId={album.id} />
+              {/* Vote buttons */}
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  onClick={() => handleVote(1)}
+                  title="Upvote (+1)"
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                    vote === 1 ? "bg-green-100 text-green-700 border border-green-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
+                  }`}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                  up
+                </button>
+                <button
+                  onClick={() => handleVote(2)}
+                  title="Star (+2)"
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                    vote === 2 ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
+                  }`}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  star
+                </button>
+                <button
+                  onClick={() => handleVote(-1)}
+                  title="Downvote (−1)"
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                    vote === -1 ? "bg-red-100 text-red-600 border border-red-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
+                  }`}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                  down
+                </button>
+                {nudge && <span className="text-zinc-400 text-[10px] ml-1">Set a username first</span>}
               </div>
             </div>
 
-            <p className="text-zinc-400 text-xs mt-3">
-              Miles Takes Years
-            </p>
-            <p className="text-zinc-500 text-[11px] mt-0.5">
-              posted by <span className="text-zinc-400">Johnson</span>
-            </p>
+            <div className="mt-3">
+              <p className="text-zinc-400 text-xs">firsttoflock</p>
+              <p className="text-zinc-500 text-[11px] mt-0.5">
+                posted by <span className="text-zinc-400">{album.creatorName || "unknown"}</span>
+              </p>
+            </div>
           </div>
 
           {/* Action strip */}
           <div className="w-12 sm:w-14 shrink-0 flex flex-col items-center py-4 gap-4 bg-zinc-100 border-l border-zinc-200">
-            {/* Community average */}
+            {/* Community score */}
             <div
               className="flex flex-col items-center gap-1.5 relative"
               ref={popoverRef}
-              onMouseEnter={openRaters}
-              onMouseLeave={() => setShowRaters(false)}
+              onMouseEnter={openVoters}
+              onMouseLeave={() => setShowVoters(false)}
             >
               <button
-                onClick={openRaters}
+                onClick={openVoters}
                 className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 cursor-pointer hover:bg-zinc-800 transition-colors tabular-nums"
-                title={raterCount > 0 ? `${raterCount} rating${raterCount !== 1 ? "s" : ""}` : "No ratings yet"}
+                title={voterCount > 0 ? `Score: ${score} · ${voterCount} voter${voterCount !== 1 ? "s" : ""}` : "No votes yet"}
               >
-                {displayAvg > 0 ? displayAvg : "—"}
+                {voterCount > 0 ? (displayScore >= 0 ? `+${displayScore}` : String(displayScore)) : "—"}
               </button>
-              {raterCount > 0 && (
-                <span className="text-[9px] text-zinc-500 leading-none">{raterCount}</span>
+              {voterCount > 0 && (
+                <span className="text-[9px] text-zinc-500 leading-none">{voterCount}</span>
               )}
-              <div className="w-8 h-1 rounded-full bg-zinc-700 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-amber-400 transition-all duration-300"
-                  style={{ width: rating > 0 ? `${rating}%` : "0%" }}
-                />
-              </div>
+              {vote !== 0 && (
+                <span className={`text-[9px] leading-none font-bold ${vote === 2 ? "text-amber-500" : vote === 1 ? "text-green-600" : "text-red-500"}`}>
+                  {voteLabel(vote)}
+                </span>
+              )}
 
-              {/* Raters popover */}
-              {showRaters && (
+              {/* Voters popover */}
+              {showVoters && (
                 <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl py-2 text-left">
-                  {raters === null ? (
+                  {voters === null ? (
                     <p className="px-3 py-1 text-zinc-600 text-xs">Loading…</p>
-                  ) : raters.length === 0 ? (
-                    <p className="px-3 py-1 text-zinc-600 text-xs">No ratings yet</p>
+                  ) : voters.length === 0 ? (
+                    <p className="px-3 py-1 text-zinc-600 text-xs">No votes yet</p>
                   ) : (
-                    raters.map(({ userId, rating: r }) => (
+                    voters.map(({ userId, vote: v }) => (
                       <div key={userId} className="flex items-center justify-between px-3 py-1">
                         <span className="text-zinc-300 text-xs truncate max-w-20">{displayName(userId)}</span>
-                        <span className="text-amber-400 text-xs font-bold tabular-nums shrink-0">{r}</span>
+                        <span className={`text-xs font-bold tabular-nums shrink-0 ${v === 2 ? "text-amber-400" : v === 1 ? "text-green-400" : "text-red-400"}`}>
+                          {v === 2 ? "★" : v === 1 ? "▲" : "▼"}
+                        </span>
                       </div>
                     ))
                   )}

@@ -4,12 +4,15 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { GifComment } from '@/types'
 
+// vote values: -1 = downvote, 1 = upvote, 2 = star (counts as 2 upvotes)
+export type VoteValue = -1 | 1 | 2
+
 interface AlbumStore {
-  ratings: Record<string, number>
+  votes: Partial<Record<string, VoteValue>>
   comments: Record<string, GifComment[]>
   favoritedAlbums: string[]
-  setRating: (albumId: string, rating: number) => void
-  loadRatings: (incoming: Record<string, number>) => void
+  setVote: (albumId: string, vote: VoteValue | 0) => void
+  loadVotes: (incoming: Record<string, VoteValue>) => void
   setComments: (albumId: string, comments: GifComment[]) => void
   addComment: (albumId: string, comment: GifComment) => void
   removeComment: (albumId: string, commentId: string) => void
@@ -20,18 +23,18 @@ interface AlbumStore {
 export const useAlbumStore = create<AlbumStore>()(
   persist(
     (set) => ({
-      ratings: {},
+      votes: {} as Partial<Record<string, VoteValue>>,
       comments: {},
       favoritedAlbums: [],
-      setRating: (albumId, rating) =>
+      setVote: (albumId, vote) =>
         set((state) => {
-          const newRatings = { ...state.ratings }
-          if (rating === 0) delete newRatings[albumId]
-          else newRatings[albumId] = rating
-          return { ratings: newRatings }
+          const next = { ...state.votes }
+          if (vote === 0) delete next[albumId]
+          else next[albumId] = vote
+          return { votes: next }
         }),
-      loadRatings: (incoming) =>
-        set((state) => ({ ratings: { ...state.ratings, ...incoming } })),
+      loadVotes: (incoming) =>
+        set((state) => ({ votes: { ...state.votes, ...incoming } })),
       setComments: (albumId, comments) =>
         set((state) => ({
           comments: { ...state.comments, [albumId]: comments },
@@ -59,6 +62,6 @@ export const useAlbumStore = create<AlbumStore>()(
       loadFavorited: (albumIds) =>
         set(() => ({ favoritedAlbums: albumIds })),
     }),
-    { name: 'album-rater-store' }
+    { name: 'flockify420-store' }
   )
 )

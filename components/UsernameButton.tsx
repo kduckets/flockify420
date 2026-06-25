@@ -12,7 +12,7 @@ export function UsernameButton({ albumIds }: Props) {
   const [input, setInput]       = useState("");
   const [syncing, setSyncing]   = useState(false);
   const inputRef                = useRef<HTMLInputElement>(null);
-  const loadRatings             = useAlbumStore((s) => s.loadRatings);
+  const loadVotes               = useAlbumStore((s) => s.loadVotes);
   const loadFavorited           = useAlbumStore((s) => s.loadFavorited);
 
   useEffect(() => { setMounted(true); }, []);
@@ -26,16 +26,16 @@ export function UsernameButton({ albumIds }: Props) {
     if (name && albumIds.length) {
       setSyncing(true);
       try {
-        const [ratingsRes, collectionRes] = await Promise.all([
-          fetch("/api/my-ratings", {
+        const [votesRes, collectionRes] = await Promise.all([
+          fetch("/api/my-votes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: name, albumIds }),
           }),
           fetch(`/api/collection?userId=${encodeURIComponent(name)}`),
         ]);
-        const ratingsData = await ratingsRes.json();
-        if (ratingsData.ratings) loadRatings(ratingsData.ratings);
+        const votesData = await votesRes.json();
+        if (votesData.votes) loadVotes(votesData.votes);
         const collectionData = await collectionRes.json();
         if (Array.isArray(collectionData.saved)) loadFavorited(collectionData.saved);
       } catch { /* fail silently */ }
@@ -76,7 +76,7 @@ export function UsernameButton({ albumIds }: Props) {
           <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6 w-full max-w-sm mx-4 shadow-2xl">
             <h3 className="text-white font-semibold text-base mb-1">Your username</h3>
             <p className="text-zinc-500 text-sm mb-4 leading-relaxed">
-              Use the same username on any device to sync your ratings. No password needed.
+              Use the same username on any device to sync your votes. No password needed.
             </p>
             <input
               ref={inputRef}
