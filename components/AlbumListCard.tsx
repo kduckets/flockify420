@@ -6,10 +6,12 @@ import { GifModal } from "./GifModal";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { useAuth } from "@/context/AuthContext";
+import { uidToUsername } from "@/data/uidToUsername";
 import type { Album } from "@/types";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-/i;
-function displayName(userId: string) { return UUID_RE.test(userId) ? "Anonymous" : userId; }
+function displayName(userId: string) {
+  return uidToUsername[userId] ?? userId;
+}
 
 interface AlbumListCardProps {
   album: Album;
