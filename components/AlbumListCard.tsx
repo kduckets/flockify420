@@ -33,7 +33,8 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
   const score       = useAveragesStore((s) => s.scores[album.id] ?? 0);
   const voterCount  = useAveragesStore((s) => s.voterCounts[album.id] ?? 0);
   const commentCount = useAveragesStore((s) => s.commentCounts[album.id] ?? 0);
-  const setScore    = useAveragesStore((s) => s.setScore);
+  const setScore      = useAveragesStore((s) => s.setScore);
+  const setVoterCount = useAveragesStore((s) => s.setVoterCount);
 
   const [displayScore, setDisplayScore] = useState(0);
   const animRef    = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -96,6 +97,7 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
       });
       const data = await res.json();
       if (typeof data.score === "number") setScore(album.id, data.score);
+      if (typeof data.voterCount === "number") setVoterCount(album.id, data.voterCount);
     } catch { /* silent */ }
   }
 

@@ -9,6 +9,7 @@ interface ScoresStore {
   voterCounts: Record<string, number>;
   fetchScores: (albumIds: string[]) => Promise<void>;
   setScore: (albumId: string, score: number | null) => void;
+  setVoterCount: (albumId: string, count: number) => void;
   setCommentCount: (albumId: string, count: number) => void;
   setLastCommentAt: (albumId: string, ts: number) => void;
 }
@@ -43,6 +44,11 @@ export const useAveragesStore = create<ScoresStore>((set) => ({
       else next[albumId] = score;
       return { scores: next };
     }),
+
+  setVoterCount: (albumId, count) =>
+    set((state) => ({
+      voterCounts: { ...state.voterCounts, [albumId]: count },
+    })),
 
   setCommentCount: (albumId, count) =>
     set((state) => ({
