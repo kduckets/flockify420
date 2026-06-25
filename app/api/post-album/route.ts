@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     "genre",       JSON.stringify(Array.isArray(genre)  ? genre  : []),
     "tags",        JSON.stringify(Array.isArray(tags)   ? tags   : []),
     "creatorName", String(creatorName ?? "Anonymous"),
+    "userId",      String(userId ?? ""),
     "createdTs",   createdTs,
     "score",       "0",
     "stars",       "0",

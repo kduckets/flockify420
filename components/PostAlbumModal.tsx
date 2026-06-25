@@ -227,7 +227,8 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
       );
       const data = await res.json();
       setGenres((prev) => [...new Set([...prev, ...(data.genre ?? [])])]);
-      setLabels((prev) => [...new Set([...prev, ...(data.labels ?? [])])]);
+      // only keep the first label
+      if (data.labels?.[0] && !labels.length) setLabels([data.labels[0]]);
       // Discogs "style" → tags
       setTags((prev) => [...new Set([...prev, ...(data.styles ?? [])])]);
     } catch { /* silent */ }
@@ -272,6 +273,7 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
         genre:       genres,
         tags,
         creatorName: getFlockifyUsername(user.uid) || user.displayName || user.email?.split("@")[0] || "Anonymous",
+        userId:      user.uid,
         createdTs:   data.createdTs,
         postOrder:   new Date(data.createdTs).getTime(),
         legacyScore: 0,
@@ -509,14 +511,20 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
                 <ChipInput values={genres} onChange={setGenres} suggestions={allGenres} placeholder="e.g. Rock, Jazz…" />
               </div>
 
-              {/* Labels */}
-              <div>
-                <label className="flex items-center gap-1.5 text-zinc-400 text-xs mb-1.5 font-medium">
-                  Labels
-                  {enriching && <span className="text-zinc-600 text-[10px]">fetching…</span>}
-                </label>
-                <ChipInput values={labels} onChange={setLabels} suggestions={allLabels} placeholder="e.g. Sub Pop, XL…" />
-              </div>
+              {/* Label — read-only, first from Discogs */}
+              {(labels[0] || enriching) && (
+                <div>
+                  <label className="flex items-center gap-1.5 text-zinc-400 text-xs mb-1.5 font-medium">
+                    Label
+                    {enriching && <span className="text-zinc-600 text-[10px]">fetching…</span>}
+                  </label>
+                  {labels[0] && (
+                    <span className="inline-block px-2 py-0.5 bg-zinc-800 text-zinc-400 text-xs rounded border border-zinc-700">
+                      {labels[0]}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Tags */}
               <div>

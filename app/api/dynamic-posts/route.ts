@@ -28,6 +28,7 @@ export async function GET() {
       genre:       parseArr(d.genre),
       tags:        parseArr(d.tags),
       creatorName: d.creatorName ?? "",
+      userId:      d.userId || undefined,
       createdTs,
       postOrder:   new Date(createdTs).getTime() || Date.now(),
       legacyScore: 0,

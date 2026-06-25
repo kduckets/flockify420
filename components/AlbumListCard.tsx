@@ -14,9 +14,10 @@ function displayName(userId: string) { return UUID_RE.test(userId) ? "Anonymous"
 interface AlbumListCardProps {
   album: Album;
   allAlbums: Album[];
+  onDelete?: () => void;
 }
 
-export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
+export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps) {
   const [gifModalOpen, setGifModalOpen] = useState(false);
   const [artworkError, setArtworkError] = useState(false);
   const [showVoters, setShowVoters]     = useState(false);
@@ -24,6 +25,7 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
   const [nudge, setNudge]               = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  const [deleting, setDeleting] = useState(false);
   const { user } = useAuth();
   const vote    = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
   const setVote = useAlbumStore((s) => s.setVote);
@@ -154,16 +156,18 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                 </div>
               )}
 
-              {/* Tags */}
-              {(album.labels.length > 0 || album.genre.length > 0) && (
+              {/* Genre / tags */}
+              {album.genre.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {album.genre.slice(0, 2).map((g) => (
                     <span key={g} className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{g}</span>
                   ))}
-                  {album.labels.slice(0, 1).map((l) => (
-                    <span key={l} className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{l}</span>
-                  ))}
                 </div>
+              )}
+
+              {/* Label — shown separately */}
+              {album.labels[0] && (
+                <p className="text-zinc-400 text-[11px] mt-1">{album.labels[0]}</p>
               )}
 
               {/* Description */}
@@ -174,10 +178,32 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
               )}
             </div>
 
-            <div className="mt-3">
+            <div className="mt-3 flex items-center justify-between gap-2">
               <p className="text-zinc-500 text-[11px]">
                 posted by <span className="text-zinc-400">{album.creatorName || "unknown"}</span>
               </p>
+              {onDelete && album.userId && user?.uid === album.userId && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm("Remove this post?")) return;
+                    setDeleting(true);
+                    try {
+                      await fetch("/api/delete-post", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: album.id, userId: user.uid }),
+                      });
+                      onDelete();
+                    } catch { /* silent */ }
+                    setDeleting(false);
+                  }}
+                  disabled={deleting}
+                  className="text-zinc-600 hover:text-red-400 text-[11px] transition-colors cursor-pointer disabled:opacity-40"
+                >
+                  {deleting ? "removing…" : "remove"}
+                </button>
+              )}
             </div>
           </div>
 

@@ -329,7 +329,14 @@ export function Feed({ albums }: FeedProps) {
             <div className="text-center py-20 text-zinc-600 text-sm">No albums match.</div>
           ) : (
             filteredAndSorted.map((album) => (
-              <AlbumListCard key={album.id} album={album} allAlbums={allAlbums} />
+              <AlbumListCard
+                key={album.id}
+                album={album}
+                allAlbums={allAlbums}
+                onDelete={album.id.startsWith("dyn_")
+                  ? () => setDynamicAlbums((prev) => prev.filter((a) => a.id !== album.id))
+                  : undefined}
+              />
             ))
           )}
         </div>

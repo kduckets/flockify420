@@ -10,6 +10,7 @@ export interface Album {
   genre: string[]
   tags: string[]
   creatorName: string
+  userId?: string
   createdTs: string
   postOrder: number
   legacyScore: number
