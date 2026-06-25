@@ -33,6 +33,7 @@ export function Feed({ albums }: FeedProps) {
   const [monthFilter, setMonthFilter]   = useState<number | null>(null);
   const [searchOpen, setSearchOpen]     = useState(false);
   const [searchQuery, setSearchQuery]   = useState("");
+  const [chipFilter, setChipFilter]     = useState<string | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
   const [visibleCount, setVisibleCount]   = useState(40);
   const searchRef   = useRef<HTMLInputElement>(null);
@@ -149,6 +150,7 @@ export function Feed({ albums }: FeedProps) {
       if (statusFilter === "favorited" && !favoritedAlbums.includes(a.id)) return false;
       if (yearFilter !== null && new Date(a.postOrder).getFullYear() !== yearFilter) return false;
       if (monthFilter !== null && new Date(a.postOrder).getMonth() !== monthFilter) return false;
+      if (chipFilter && !a.genre.includes(chipFilter) && !a.tags.includes(chipFilter)) return false;
       return true;
     });
     return [...filtered].sort((a, b) => {
@@ -158,10 +160,10 @@ export function Feed({ albums }: FeedProps) {
         case "comments": return dir * ((lastCommentAt[b.id] ?? 0) - (lastCommentAt[a.id] ?? 0));
       }
     });
-  }, [allAlbums, sortOrder, sortDir, scores, lastCommentAt, searchLower, statusFilter, votes, favoritedAlbums, yearFilter, monthFilter]);
+  }, [allAlbums, sortOrder, sortDir, scores, lastCommentAt, searchLower, statusFilter, votes, favoritedAlbums, yearFilter, monthFilter, chipFilter]);
 
   // Reset visible count when filters/sort/view change
-  useEffect(() => { setVisibleCount(40); }, [sortOrder, sortDir, statusFilter, yearFilter, monthFilter, searchQuery, viewMode]);
+  useEffect(() => { setVisibleCount(40); }, [sortOrder, sortDir, statusFilter, yearFilter, monthFilter, searchQuery, viewMode, chipFilter]);
 
   // Infinite scroll: load 40 more when sentinel enters viewport
   useEffect(() => {
@@ -346,6 +348,14 @@ export function Feed({ albums }: FeedProps) {
             ♥ Favorites
           </button>
         )}
+        {chipFilter && (
+          <button
+            onClick={() => setChipFilter(null)}
+            className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-blue-600 text-white cursor-pointer"
+          >
+            {chipFilter} ×
+          </button>
+        )}
       </div>
 
       {viewMode === "classic" ? (
@@ -362,6 +372,7 @@ export function Feed({ albums }: FeedProps) {
                   onDelete={album.id.startsWith("dyn_")
                     ? () => removeDynamicAlbum(album.id)
                     : undefined}
+                  onChipClick={setChipFilter}
                 />
               ))}
               {visibleCount < filteredAndSorted.length && (

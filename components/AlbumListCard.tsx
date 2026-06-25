@@ -17,9 +17,10 @@ interface AlbumListCardProps {
   album: Album;
   allAlbums: Album[];
   onDelete?: () => void;
+  onChipClick?: (chip: string) => void;
 }
 
-export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps) {
+export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: AlbumListCardProps) {
   const [gifModalOpen, setGifModalOpen] = useState(false);
   const [artworkError, setArtworkError] = useState(false);
   const [showVoters, setShowVoters]     = useState(false);
@@ -177,10 +178,10 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
               {(album.genre.length > 0 || album.tags.length > 0) && (
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {album.genre.slice(0, 2).map((g) => (
-                    <span key={g} className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{g}</span>
+                    <button key={g} onClick={() => onChipClick?.(g)} className={`px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded ${onChipClick ? "cursor-pointer hover:bg-zinc-300" : ""}`}>{g}</button>
                   ))}
                   {album.tags.slice(0, 3).map((t) => (
-                    <span key={t} className="px-2 py-0.5 bg-zinc-100 text-zinc-500 text-xs rounded">{t}</span>
+                    <button key={t} onClick={() => onChipClick?.(t)} className={`px-2 py-0.5 bg-zinc-100 text-zinc-500 text-xs rounded ${onChipClick ? "cursor-pointer hover:bg-zinc-200" : ""}`}>{t}</button>
                   ))}
                 </div>
               )}
