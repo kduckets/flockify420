@@ -20,21 +20,21 @@ export const metadata: Metadata = {
   },
   description: "Flockify in the robot era.",
   icons: {
-    icon: "/flockify-icon-only.png",
-    apple: "/flockify-icon-only.png",
+    icon: "/favicon.png",
+    apple: "/favicon.png",
   },
   openGraph: {
     title: "Flockify 4.2.0",
     description: "Flockify in the robot era.",
     siteName: "Flockify 4.2.0",
     type: "website",
-    images: [{ url: "/flockify-icon-only.png" }],
+    images: [{ url: "/favicon.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Flockify 4.2.0",
     description: "Flockify in the robot era.",
-    images: ["/flockify-icon-only.png"],
+    images: ["/favicon.png"],
   },
 };
 
