@@ -88,6 +88,7 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
       setTimeout(() => setNudge(false), 2500);
       return;
     }
+    if (album.userId && user.uid === album.userId) return;
     const userId = user.uid;
     const next: VoteValue | 0 = vote === newVote ? 0 : newVote;
     setVote(album.id, next);
@@ -226,7 +227,7 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
                 className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 cursor-pointer hover:bg-zinc-800 transition-colors tabular-nums"
                 title={voterCount > 0 ? `Score: ${score} · ${voterCount} voter${voterCount !== 1 ? "s" : ""}` : `Legacy score: ${album.legacyScore}`}
               >
-                {displayScore >= 0 ? `+${displayScore}` : String(displayScore)}
+                {displayScore < 0 ? String(displayScore) : displayScore}
               </button>
               {voterCount > 0 && (
                 <span className="text-[9px] text-zinc-500 leading-none">{voterCount}</span>
