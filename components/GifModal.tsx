@@ -149,10 +149,25 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
     }).catch(() => {});
   }
 
-  const related = allAlbums
-    .filter((a) => a.id !== album.id && a.artworkUrl)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 4);
+  const related = (() => {
+    const descWords = (album.description ?? "").toLowerCase().split(/\W+/).filter((w) => w.length > 4);
+    const albumGenres = new Set(album.genre.map((g) => g.toLowerCase()));
+    const scored = allAlbums
+      .filter((a) => a.id !== album.id && a.artworkUrl)
+      .map((a) => {
+        let score = 0;
+        if (a.artist === album.artist) score += 10;
+        for (const g of a.genre) { if (albumGenres.has(g.toLowerCase())) score += 4; }
+        if (album.description) {
+          const text = `${a.title} ${a.artist} ${a.description ?? ""}`.toLowerCase();
+          for (const w of descWords) { if (text.includes(w)) score += 1; }
+        }
+        return { album: a, score };
+      })
+      .filter((x) => x.score > 0 || Math.random() < 0.02)
+      .sort((a, b) => b.score - a.score || Math.random() - 0.5);
+    return scored.slice(0, 4).map((x) => x.album);
+  })();
 
   function startAddMode(mode: "search" | "paste") {
     if (!hasSetUsername()) {
@@ -307,6 +322,15 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                 <p className="text-[#4a90d9] font-semibold text-sm leading-snug">
                   {album.artist} – {album.title}{album.year ? ` (${album.year})` : ""}
                 </p>
+                {album.legacyStars > 0 && (
+                  <div className="flex gap-0.5 mt-1">
+                    {Array.from({ length: album.legacyStars }).map((_, i) => (
+                      <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    ))}
+                  </div>
+                )}
                 <p className="text-zinc-500 text-xs mt-1">
                   posted by <span className="text-zinc-300">{album.creatorName || "unknown"}</span>
                 </p>
