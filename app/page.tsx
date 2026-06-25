@@ -1,8 +1,5 @@
 import { Feed } from "@/components/Feed";
-import { LoginButton } from "@/components/LoginButton";
-import { ResetFeedButton } from "@/components/ResetFeedButton";
-import { RandomAlbumButton } from "@/components/RandomAlbumButton";
-import { FaotyButton } from "@/components/FaotyButton";
+import { StickyHeader } from "@/components/StickyHeader";
 import { FLOCKIFY_POSTS } from "@/data/flockifyPosts";
 import type { Album } from "@/types";
 
@@ -27,31 +24,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black">
-      <header className="flex items-center justify-between px-5 py-3 border-b border-zinc-900">
-        <ResetFeedButton />
-        <div />
-        <div className="flex items-center gap-3 text-zinc-500">
-          <a
-            href="https://flockify-discographies.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Discographies"
-            title="Flockify Discographies"
-            className="opacity-50 hover:opacity-100 transition-opacity"
-          >
-            {/* stack of vinyl records */}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <ellipse cx="12" cy="18" rx="8.5" ry="2.5" />
-              <ellipse cx="12" cy="14" rx="8.5" ry="2.5" />
-              <ellipse cx="12" cy="10" rx="8.5" ry="2.5" />
-              <circle cx="12" cy="10" r="1.3" stroke="none" fill="currentColor" />
-            </svg>
-          </a>
-          <FaotyButton albums={albums} />
-          <RandomAlbumButton albums={albums} />
-          <LoginButton albumIds={albums.map((a) => a.id)} />
-        </div>
-      </header>
+      <StickyHeader albums={albums} />
 
       <main className="max-w-3xl mx-auto">
         <Feed albums={albums} />
