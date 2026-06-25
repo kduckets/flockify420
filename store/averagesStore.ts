@@ -31,13 +31,14 @@ export const useAveragesStore = create<ScoresStore>((set) => ({
         body: JSON.stringify({ ids: albumIds }),
       });
       const data = await res.json();
-      set({
+      set((state) => ({
         scores: data.scores ?? {},
-        commentCounts: data.commentCounts ?? {},
-        lastCommentAt: data.lastCommentAt ?? {},
+        // Merge comment counts so setCommentCount updates aren't wiped by stale fetches
+        commentCounts: { ...state.commentCounts, ...(data.commentCounts ?? {}) },
+        lastCommentAt: { ...state.lastCommentAt, ...(data.lastCommentAt ?? {}) },
         voterCounts: data.voterCounts ?? {},
         starCounts: data.starCounts ?? {},
-      });
+      }));
     } catch { /* silently ignore */ }
   },
 

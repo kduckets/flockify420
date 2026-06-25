@@ -89,8 +89,11 @@ export function Feed({ albums }: FeedProps) {
     return ms.sort((a, b) => a - b);
   }, [allAlbums, yearFilter]);
 
+  const albumIdsRef = useRef(albumIds);
+  albumIdsRef.current = albumIds;
+
   const refresh = useCallback(async () => {
-    fetchScores(albumIds);
+    fetchScores(albumIdsRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

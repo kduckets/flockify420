@@ -103,10 +103,14 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
     setLoadingComments(true);
     fetch(`/api/comments?albumId=${encodeURIComponent(album.id)}`)
       .then((r) => r.json())
-      .then((data) => { setComments(data.comments ?? []); })
+      .then((data) => {
+        const loaded = data.comments ?? [];
+        setComments(loaded);
+        setCommentCount(album.id, loaded.length);
+      })
       .catch(() => {})
       .finally(() => setLoadingComments(false));
-  }, [album.id]);
+  }, [album.id, setCommentCount]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };

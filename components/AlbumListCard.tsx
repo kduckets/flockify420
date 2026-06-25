@@ -168,18 +168,21 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
                 ) : null;
               })()}
 
+              {/* Label — shown above genres */}
+              {album.labels[0] && (
+                <p className="text-zinc-400 text-[11px] mt-1">{album.labels[0]}</p>
+              )}
+
               {/* Genre / tags */}
-              {album.genre.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {(album.genre.length > 0 || album.tags.length > 0) && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {album.genre.slice(0, 2).map((g) => (
                     <span key={g} className="px-2 py-0.5 bg-zinc-200 text-zinc-600 text-xs rounded">{g}</span>
                   ))}
+                  {album.tags.slice(0, 3).map((t) => (
+                    <span key={t} className="px-2 py-0.5 bg-zinc-100 text-zinc-500 text-xs rounded">{t}</span>
+                  ))}
                 </div>
-              )}
-
-              {/* Label — shown separately */}
-              {album.labels[0] && (
-                <p className="text-zinc-400 text-[11px] mt-1">{album.labels[0]}</p>
               )}
 
               {/* Description */}
