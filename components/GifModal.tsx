@@ -522,7 +522,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                 <>
                   <hr className="border-zinc-800" />
                   <div>
-                    <p className="text-zinc-400 text-sm font-medium mb-3">More from firsttoflock:</p>
+                    <p className="text-zinc-400 text-sm font-medium mb-3">More albums:</p>
                     <div className="flex gap-2">
                       {related.map((rel) => (
                         <button

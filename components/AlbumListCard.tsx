@@ -198,8 +198,7 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
             </div>
 
             <div className="mt-3">
-              <p className="text-zinc-400 text-xs">firsttoflock</p>
-              <p className="text-zinc-500 text-[11px] mt-0.5">
+              <p className="text-zinc-500 text-[11px]">
                 posted by <span className="text-zinc-400">{album.creatorName || "unknown"}</span>
               </p>
             </div>
