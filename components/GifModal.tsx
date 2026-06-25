@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
+import { useUIStore } from "@/store/uiStore";
 import { getUsername, setUsername, hasSetUsername, getEffectiveUserId } from "@/lib/identity";
 import { getFlockifyUsername } from "@/data/uidToUsername";
 import { useAuth } from "@/context/AuthContext";
@@ -51,7 +52,6 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const [comments, setComments]       = useState<GifComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(true);
   const [posting, setPosting]         = useState(false);
-  const [nudge, setNudge]             = useState(false);
 
   function navigateTo(next: typeof initialAlbum) {
     setAlbum(next);
@@ -78,6 +78,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const setCommentCount = useAveragesStore((s) => s.setCommentCount);
   const setLastCommentAt = useAveragesStore((s) => s.setLastCommentAt);
   const setScore        = useAveragesStore((s) => s.setScore);
+  const openSignInModal = useUIStore((s) => s.openSignInModal);
 
   const visitorId  = user?.uid ?? getEffectiveUserId();
   const spotifyUrl = album.spotifyUri || `https://open.spotify.com/search/${encodeURIComponent(`${album.title} ${album.artist}`)}`;
@@ -124,8 +125,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
 
   async function handleVote(newVote: VoteValue) {
     if (!user) {
-      setNudge(true);
-      setTimeout(() => setNudge(false), 2500);
+      openSignInModal();
       return;
     }
     const userId = user.uid;
@@ -379,9 +379,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                   </span>
                 )}
 
-                {nudge && <span className="text-zinc-400 text-[10px]">Sign in to vote</span>}
-
-                {/* Favorite + streaming links */}
+{/* Favorite + streaming links */}
                 <div className="ml-auto flex items-center gap-3">
                   <button
                     onClick={handleFavorite}

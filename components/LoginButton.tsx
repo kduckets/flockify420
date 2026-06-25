@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useAlbumStore } from "@/store/albumStore";
+import { useUIStore } from "@/store/uiStore";
 import { getFlockifyUsername } from "@/data/uidToUsername";
 
 interface Props { albumIds: string[] }
@@ -34,6 +35,14 @@ export function LoginButton({ albumIds }: Props) {
 
   const loadVotes     = useAlbumStore((s) => s.loadVotes);
   const loadFavorited = useAlbumStore((s) => s.loadFavorited);
+  const signInModalOpen  = useUIStore((s) => s.signInModalOpen);
+  const closeSignInModal = useUIStore((s) => s.closeSignInModal);
+
+  useEffect(() => {
+    if (signInModalOpen && !user) openModal();
+    if (signInModalOpen) closeSignInModal();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signInModalOpen]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();

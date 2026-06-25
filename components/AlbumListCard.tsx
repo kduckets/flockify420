@@ -5,6 +5,7 @@ import Image from "next/image";
 import { GifModal } from "./GifModal";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
+import { useUIStore } from "@/store/uiStore";
 import { useAuth } from "@/context/AuthContext";
 import { uidToUsername } from "@/data/uidToUsername";
 import type { Album } from "@/types";
@@ -25,11 +26,11 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
   const [artworkError, setArtworkError] = useState(false);
   const [showVoters, setShowVoters]     = useState(false);
   const [voters, setVoters]             = useState<{ userId: string; vote: number }[] | null>(null);
-  const [nudge, setNudge]               = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const [deleting, setDeleting] = useState(false);
   const { user } = useAuth();
+  const openSignInModal = useUIStore((s) => s.openSignInModal);
   const vote    = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
   const setVote = useAlbumStore((s) => s.setVote);
 
@@ -87,8 +88,7 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
 
   async function handleVote(newVote: VoteValue) {
     if (!user) {
-      setNudge(true);
-      setTimeout(() => setNudge(false), 2500);
+      openSignInModal();
       return;
     }
     if (album.userId && user.uid === album.userId) return;
@@ -300,9 +300,6 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
-              {nudge && (
-                <span className="text-zinc-500 text-[8px] leading-tight text-center">sign in</span>
-              )}
             </div>
 
             {/* GIF comments */}
