@@ -166,32 +166,29 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                 <button
                   onClick={() => handleVote(1)}
                   title="Upvote (+1)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors cursor-pointer ${
                     vote === 1 ? "bg-green-100 text-green-700 border border-green-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
                   }`}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  up
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
                 </button>
                 <button
                   onClick={() => handleVote(2)}
                   title="Star (+2)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors cursor-pointer ${
                     vote === 2 ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
                   }`}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  star
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 </button>
                 <button
                   onClick={() => handleVote(-1)}
                   title="Downvote (−1)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors cursor-pointer ${
                     vote === -1 ? "bg-red-100 text-red-600 border border-red-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
                   }`}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                  down
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 {nudge && <span className="text-zinc-400 text-[10px] ml-1">Set a username first</span>}
               </div>

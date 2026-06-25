@@ -316,32 +316,29 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                 <button
                   onClick={() => handleVote(1)}
                   title="Upvote (+1)"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center w-9 h-9 rounded transition-colors cursor-pointer ${
                     vote === 1 ? "bg-green-900/60 text-green-400 border border-green-700" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
                   }`}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                  Upvote
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
                 </button>
                 <button
                   onClick={() => handleVote(2)}
                   title="Star (+2)"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center w-9 h-9 rounded transition-colors cursor-pointer ${
                     vote === 2 ? "bg-amber-900/60 text-amber-400 border border-amber-700" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
                   }`}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  Star
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 </button>
                 <button
                   onClick={() => handleVote(-1)}
                   title="Downvote (−1)"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center w-9 h-9 rounded transition-colors cursor-pointer ${
                     vote === -1 ? "bg-red-900/60 text-red-400 border border-red-700" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
                   }`}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                  Down
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
 
                 {/* Score bubble */}
