@@ -285,6 +285,12 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
         userId: user.uid,
       }),
     }).catch(() => { /* background save — failure corrects on next reload */ });
+
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: creatorName, album: selected.album, artist: selected.artist }),
+    }).catch(() => {});
   }
 
   const alreadyPosted = (r: SearchResult) =>
