@@ -34,7 +34,9 @@ export function Feed({ albums }: FeedProps) {
   const [searchOpen, setSearchOpen]     = useState(false);
   const [searchQuery, setSearchQuery]   = useState("");
   const [showPostModal, setShowPostModal] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [visibleCount, setVisibleCount]   = useState(40);
+  const searchRef   = useRef<HTMLInputElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
   const votes           = useAlbumStore((s) => s.votes);
@@ -154,6 +156,23 @@ export function Feed({ albums }: FeedProps) {
       }
     });
   }, [allAlbums, sortOrder, sortDir, scores, lastCommentAt, searchLower, statusFilter, votes, favoritedAlbums, yearFilter, monthFilter]);
+
+  // Reset visible count when filters/sort/view change
+  useEffect(() => { setVisibleCount(40); }, [sortOrder, sortDir, statusFilter, yearFilter, monthFilter, searchQuery, viewMode]);
+
+  // Infinite scroll: load 40 more when sentinel enters viewport
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisibleCount((n) => n + 40); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filteredAndSorted]);
+
+  const visibleAlbums = useMemo(() => filteredAndSorted.slice(0, visibleCount), [filteredAndSorted, visibleCount]);
 
   const votedCount  = allAlbums.filter((a) => votes[a.id]).length;
   const totalGifs   = Object.values(comments).reduce((n, arr) => n + arr.length, 0);
@@ -331,16 +350,23 @@ export function Feed({ albums }: FeedProps) {
           {filteredAndSorted.length === 0 ? (
             <div className="text-center py-20 text-zinc-600 text-sm">No albums match.</div>
           ) : (
-            filteredAndSorted.map((album) => (
-              <AlbumListCard
-                key={album.id}
-                album={album}
-                allAlbums={allAlbums}
-                onDelete={album.id.startsWith("dyn_")
-                  ? () => removeDynamicAlbum(album.id)
-                  : undefined}
-              />
-            ))
+            <>
+              {visibleAlbums.map((album) => (
+                <AlbumListCard
+                  key={album.id}
+                  album={album}
+                  allAlbums={allAlbums}
+                  onDelete={album.id.startsWith("dyn_")
+                    ? () => removeDynamicAlbum(album.id)
+                    : undefined}
+                />
+              ))}
+              {visibleCount < filteredAndSorted.length && (
+                <div ref={sentinelRef} className="py-4 text-center text-zinc-700 text-xs">
+                  {visibleAlbums.length} of {filteredAndSorted.length}
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (
@@ -348,11 +374,18 @@ export function Feed({ albums }: FeedProps) {
           {filteredAndSorted.length === 0 ? (
             <div className="text-center py-20 text-zinc-600 text-sm">No albums match.</div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2">
-              {filteredAndSorted.map((album) => (
-                <AlbumGridCard key={album.id} album={album} allAlbums={allAlbums} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2">
+                {visibleAlbums.map((album) => (
+                  <AlbumGridCard key={album.id} album={album} allAlbums={allAlbums} />
+                ))}
+              </div>
+              {visibleCount < filteredAndSorted.length && (
+                <div ref={sentinelRef} className="py-4 text-center text-zinc-700 text-xs">
+                  {visibleAlbums.length} of {filteredAndSorted.length}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
