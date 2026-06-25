@@ -30,7 +30,6 @@ export default function Home() {
         <ResetFeedButton />
         <div />
         <div className="flex items-center gap-3 text-zinc-500">
-          <RandomAlbumButton albums={albums} />
           <a
             href="https://flockify-discographies.vercel.app/"
             target="_blank"
@@ -47,6 +46,7 @@ export default function Home() {
               <circle cx="12" cy="10" r="1.3" stroke="none" fill="currentColor" />
             </svg>
           </a>
+          <RandomAlbumButton albums={albums} />
           <LoginButton albumIds={albums.map((a) => a.id)} />
         </div>
       </header>
