@@ -18,7 +18,7 @@ export function ResetFeedButton() {
         <span className="absolute bottom-0 right-0 text-[6px] text-white/40 font-mono leading-none">4.2.0</span>
       </div>
       <span className="text-white font-bold text-base tracking-wide">
-        flockify<span className="text-zinc-500 font-normal text-sm ml-0.5">discographies</span>
+        flockify<span className="text-zinc-500 font-normal text-sm ml-0.5">4.2.0</span>
       </span>
     </button>
   );
