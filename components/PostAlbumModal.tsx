@@ -235,56 +235,56 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
     setEnriching(false);
   }
 
-  async function handlePost() {
+  function handlePost() {
     if (!user || !selected) return;
     setPosting(true);
-    setPostError("");
-    try {
-      const res = await fetch("/api/post-album", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          album:       selected.album,
-          artist:      selected.artist,
-          artworkUrl:  selected.artworkUrl,
-          spotifyUri:  "",
-          releaseDate: selected.releaseDate,
-          summary:     description.trim(),
-          labels,
-          genre:  genres,
-          tags,
-          creatorName: getFlockifyUsername(user.uid) || user.displayName || user.email?.split("@")[0] || "Anonymous",
-          userId:      user.uid,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) { setPostError(data.error); setPosting(false); return; }
 
-      const year = parseInt(selected.releaseDate) || 0;
-      const newAlbum: Album = {
-        id:          data.id,
-        title:       selected.album,
+    const id        = `dyn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const createdTs = new Date().toISOString();
+    const creatorName = getFlockifyUsername(user.uid) || user.displayName || user.email?.split("@")[0] || "Anonymous";
+    const year = parseInt(selected.releaseDate) || 0;
+
+    const newAlbum: Album = {
+      id,
+      title:       selected.album,
+      artist:      selected.artist,
+      year,
+      artworkUrl:  selected.artworkUrl,
+      spotifyUri:  "",
+      description: description.trim() || undefined,
+      labels,
+      genre:       genres,
+      tags,
+      creatorName,
+      userId:      user.uid,
+      createdTs,
+      postOrder:   new Date(createdTs).getTime(),
+      legacyScore: 0,
+      legacyStars: 0,
+    };
+
+    // Add to feed immediately, then persist in background
+    onPosted(newAlbum);
+    onClose();
+
+    fetch("/api/post-album", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        album:       selected.album,
         artist:      selected.artist,
-        year,
         artworkUrl:  selected.artworkUrl,
         spotifyUri:  "",
-        description: description.trim() || undefined,
+        releaseDate: selected.releaseDate,
+        summary:     description.trim(),
         labels,
-        genre:       genres,
+        genre:  genres,
         tags,
-        creatorName: getFlockifyUsername(user.uid) || user.displayName || user.email?.split("@")[0] || "Anonymous",
-        userId:      user.uid,
-        createdTs:   data.createdTs,
-        postOrder:   new Date(data.createdTs).getTime(),
-        legacyScore: 0,
-        legacyStars: 0,
-      };
-      onPosted(newAlbum);
-      onClose();
-    } catch {
-      setPostError("Something went wrong — try again.");
-    }
-    setPosting(false);
+        creatorName,
+        userId: user.uid,
+      }),
+    }).catch(() => { /* background save — failure corrects on next reload */ });
   }
 
   const alreadyPosted = (r: SearchResult) =>

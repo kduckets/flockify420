@@ -3,13 +3,13 @@ import { pipeline } from "@/lib/redis";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { album, artist, artworkUrl, spotifyUri, releaseDate, summary, labels, genre, tags, creatorName, userId } = body;
+  const { id: clientId, album, artist, artworkUrl, spotifyUri, releaseDate, summary, labels, genre, tags, creatorName, userId } = body;
 
   if (!album?.trim() || !artist?.trim() || !userId) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const id        = `dyn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const id        = (typeof clientId === "string" && clientId.startsWith("dyn_")) ? clientId : `dyn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const createdTs = new Date().toISOString();
   const timestamp = Date.now();
 
