@@ -18,6 +18,8 @@ const SORT_TABS: { label: string; value: SortOrder }[] = [
   { label: "COMMENTS", value: "comments" },
 ];
 
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
 type ViewMode    = "classic" | "grid";
 type StatusFilter = "all" | "voted" | "unvoted" | "favorited";
 
@@ -26,6 +28,8 @@ export function Feed({ albums }: FeedProps) {
   const [sortOrder, setSortOrder]       = useState<SortOrder>("new");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortDir, setSortDir]           = useState<"desc" | "asc">("desc");
+  const [yearFilter, setYearFilter]     = useState<number | null>(null);
+  const [monthFilter, setMonthFilter]   = useState<number | null>(null);
   const [searchOpen, setSearchOpen]     = useState(false);
   const [searchQuery, setSearchQuery]   = useState("");
   const searchRef                       = useRef<HTMLInputElement>(null);
@@ -41,6 +45,22 @@ export function Feed({ albums }: FeedProps) {
   const fetchScores   = useAveragesStore((s) => s.fetchScores);
 
   const albumIds = albums.map((a) => a.id);
+
+  // Year + month breakdowns
+  const years = useMemo(() => {
+    const ys = [...new Set(albums.map((a) => new Date(a.postOrder).getFullYear()))];
+    return ys.sort((a, b) => b - a);
+  }, [albums]);
+
+  const monthsForYear = useMemo(() => {
+    if (!yearFilter) return [];
+    const ms = [...new Set(
+      albums
+        .filter((a) => new Date(a.postOrder).getFullYear() === yearFilter)
+        .map((a) => new Date(a.postOrder).getMonth())
+    )];
+    return ms.sort((a, b) => a - b);
+  }, [albums, yearFilter]);
 
   const refresh = useCallback(async () => {
     fetchScores(albumIds);
@@ -78,6 +98,8 @@ export function Feed({ albums }: FeedProps) {
       setSortOrder("new");
       setSortDir("desc");
       setStatusFilter("all");
+      setYearFilter(null);
+      setMonthFilter(null);
       setSearchOpen(false);
       setSearchQuery("");
     }
@@ -94,6 +116,8 @@ export function Feed({ albums }: FeedProps) {
       if (statusFilter === "voted"    && !votes[a.id])                    return false;
       if (statusFilter === "unvoted"  && votes[a.id])                     return false;
       if (statusFilter === "favorited" && !favoritedAlbums.includes(a.id)) return false;
+      if (yearFilter !== null && new Date(a.postOrder).getFullYear() !== yearFilter) return false;
+      if (monthFilter !== null && new Date(a.postOrder).getMonth() !== monthFilter) return false;
       return true;
     });
     return [...filtered].sort((a, b) => {
@@ -170,6 +194,46 @@ export function Feed({ albums }: FeedProps) {
             </svg>
           </button>
         </div>
+      </div>
+
+      {/* Year / month filter */}
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-900 overflow-x-auto overflow-y-hidden"
+        style={{ touchAction: "pan-x" }}
+      >
+        <button
+          onClick={() => { setYearFilter(null); setMonthFilter(null); }}
+          className={`shrink-0 px-2.5 py-0.5 rounded text-[11px] font-semibold tracking-widest transition-colors cursor-pointer ${
+            yearFilter === null ? "bg-zinc-700 text-white" : "text-zinc-600 hover:text-zinc-300"
+          }`}
+        >ALL</button>
+        <span className="text-zinc-800 shrink-0">|</span>
+        {years.map((y) => (
+          <button
+            key={y}
+            onClick={() => {
+              if (yearFilter === y) { setYearFilter(null); setMonthFilter(null); }
+              else { setYearFilter(y); setMonthFilter(null); }
+            }}
+            className={`shrink-0 px-2.5 py-0.5 rounded text-[11px] font-semibold tracking-wide transition-colors cursor-pointer ${
+              yearFilter === y ? "bg-zinc-700 text-white" : "text-zinc-600 hover:text-zinc-300"
+            }`}
+          >{y}</button>
+        ))}
+        {yearFilter !== null && monthsForYear.length > 1 && (
+          <>
+            <span className="text-zinc-800 shrink-0">|</span>
+            {monthsForYear.map((m) => (
+              <button
+                key={m}
+                onClick={() => setMonthFilter(monthFilter === m ? null : m)}
+                className={`shrink-0 px-2.5 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  monthFilter === m ? "bg-zinc-700 text-white" : "text-zinc-600 hover:text-zinc-300"
+                }`}
+              >{MONTH_NAMES[m]}</button>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Search bar */}
