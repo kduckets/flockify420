@@ -7,9 +7,11 @@ interface ScoresStore {
   commentCounts: Record<string, number>;
   lastCommentAt: Record<string, number>;
   voterCounts: Record<string, number>;
+  starCounts: Record<string, number>;
   fetchScores: (albumIds: string[]) => Promise<void>;
   setScore: (albumId: string, score: number | null) => void;
   setVoterCount: (albumId: string, count: number) => void;
+  setStarCount: (albumId: string, count: number) => void;
   setCommentCount: (albumId: string, count: number) => void;
   setLastCommentAt: (albumId: string, ts: number) => void;
 }
@@ -19,6 +21,7 @@ export const useAveragesStore = create<ScoresStore>((set) => ({
   commentCounts: {},
   lastCommentAt: {},
   voterCounts: {},
+  starCounts: {},
 
   fetchScores: async (albumIds) => {
     try {
@@ -33,6 +36,7 @@ export const useAveragesStore = create<ScoresStore>((set) => ({
         commentCounts: data.commentCounts ?? {},
         lastCommentAt: data.lastCommentAt ?? {},
         voterCounts: data.voterCounts ?? {},
+        starCounts: data.starCounts ?? {},
       });
     } catch { /* silently ignore */ }
   },
@@ -48,6 +52,11 @@ export const useAveragesStore = create<ScoresStore>((set) => ({
   setVoterCount: (albumId, count) =>
     set((state) => ({
       voterCounts: { ...state.voterCounts, [albumId]: count },
+    })),
+
+  setStarCount: (albumId, count) =>
+    set((state) => ({
+      starCounts: { ...state.starCounts, [albumId]: count },
     })),
 
   setCommentCount: (albumId, count) =>

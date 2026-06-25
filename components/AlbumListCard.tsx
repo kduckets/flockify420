@@ -35,8 +35,10 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
   const score       = useAveragesStore((s) => s.scores[album.id] ?? 0);
   const voterCount  = useAveragesStore((s) => s.voterCounts[album.id] ?? 0);
   const commentCount = useAveragesStore((s) => s.commentCounts[album.id] ?? 0);
+  const starCount     = useAveragesStore((s) => s.starCounts[album.id] ?? 0);
   const setScore      = useAveragesStore((s) => s.setScore);
   const setVoterCount = useAveragesStore((s) => s.setVoterCount);
+  const setStarCount  = useAveragesStore((s) => s.setStarCount);
 
   const [displayScore, setDisplayScore] = useState(0);
   const animRef    = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -101,6 +103,7 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
       const data = await res.json();
       if (typeof data.score === "number") setScore(album.id, data.score);
       if (typeof data.voterCount === "number") setVoterCount(album.id, data.voterCount);
+      if (typeof data.starCount === "number") setStarCount(album.id, data.starCount);
       setVoters(null); // invalidate so next hover re-fetches with updated vote
     } catch { /* silent */ }
   }
@@ -151,16 +154,19 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
                 {album.title}{album.year ? ` (${album.year})` : ""}
               </a>
 
-              {/* Legacy stars */}
-              {album.legacyStars > 0 && (
-                <div className="flex gap-0.5 mt-1">
-                  {Array.from({ length: album.legacyStars }).map((_, i) => (
-                    <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                  ))}
-                </div>
-              )}
+              {/* Stars — from Redis if votes exist, else legacy */}
+              {(() => {
+                const displayStars = voterCount > 0 ? starCount : album.legacyStars;
+                return displayStars > 0 ? (
+                  <div className="flex gap-0.5 mt-1">
+                    {Array.from({ length: displayStars }).map((_, i) => (
+                      <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
 
               {/* Genre / tags */}
               {album.genre.length > 0 && (

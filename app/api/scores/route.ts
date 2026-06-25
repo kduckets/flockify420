@@ -16,13 +16,15 @@ export async function POST(req: NextRequest) {
   const scores: Record<string, number> = {};
   const commentCounts: Record<string, number> = {};
   const voterCounts: Record<string, number> = {};
+  const starCounts: Record<string, number> = {};
 
   ids.forEach((id, i) => {
     const raw = results[i * 2]?.result;
-    const { score, count } = scoreFromHgetall(raw);
+    const { score, count, stars } = scoreFromHgetall(raw);
     if (count > 0) {
       scores[id] = score;
       voterCounts[id] = count;
+      if (stars > 0) starCounts[id] = stars;
     }
     const commentCount = typeof results[i * 2 + 1]?.result === "number"
       ? (results[i * 2 + 1].result as number)
@@ -40,5 +42,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ scores, commentCounts, lastCommentAt, voterCounts });
+  return NextResponse.json({ scores, commentCounts, lastCommentAt, voterCounts, starCounts });
 }

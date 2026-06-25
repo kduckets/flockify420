@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     : ["HSET", key, userId, String(vote)];
 
   const [, hgetallRes] = await pipeline([cmd, ["HGETALL", key]]);
-  const { score, count } = scoreFromHgetall(hgetallRes.result);
+  const { score, count, stars } = scoreFromHgetall(hgetallRes.result);
 
-  return NextResponse.json({ score, voterCount: count });
+  return NextResponse.json({ score, voterCount: count, starCount: stars });
 }
