@@ -2,6 +2,7 @@ import { Feed } from "@/components/Feed";
 import { LoginButton } from "@/components/LoginButton";
 import { ResetFeedButton } from "@/components/ResetFeedButton";
 import { RandomAlbumButton } from "@/components/RandomAlbumButton";
+import { FaotyButton } from "@/components/FaotyButton";
 import { FLOCKIFY_POSTS } from "@/data/flockifyPosts";
 import type { Album } from "@/types";
 
@@ -46,6 +47,7 @@ export default function Home() {
               <circle cx="12" cy="10" r="1.3" stroke="none" fill="currentColor" />
             </svg>
           </a>
+          <FaotyButton albums={albums} />
           <RandomAlbumButton albums={albums} />
           <LoginButton albumIds={albums.map((a) => a.id)} />
         </div>
