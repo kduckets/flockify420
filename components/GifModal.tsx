@@ -150,7 +150,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
     }).catch(() => {});
   }
 
-  const related = (() => {
+  const [related] = useState(() => {
     const descWords = (album.description ?? "").toLowerCase().split(/\W+/).filter((w) => w.length > 4);
     const albumGenres = new Set(album.genre.map((g) => g.toLowerCase()));
     const scored = allAlbums
@@ -168,7 +168,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
       .filter((x) => x.score > 0 || Math.random() < 0.02)
       .sort((a, b) => b.score - a.score || Math.random() - 0.5);
     return scored.slice(0, 4).map((x) => x.album);
-  })();
+  });
 
   function startAddMode(mode: "search" | "paste") {
     // If logged in or anonymous, skip the name prompt entirely
@@ -545,7 +545,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                 <>
                   <hr className="border-zinc-800" />
                   <div>
-                    <p className="text-zinc-400 text-sm font-medium mb-3">More albums:</p>
+                    <p className="text-zinc-400 text-sm font-medium mb-3">Related Albums</p>
                     <div className="flex gap-2">
                       {related.map((rel) => (
                         <button
