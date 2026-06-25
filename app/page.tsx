@@ -2,7 +2,7 @@ import { Feed } from "@/components/Feed";
 import { LoginButton } from "@/components/LoginButton";
 import { ResetFeedButton } from "@/components/ResetFeedButton";
 import { RandomAlbumButton } from "@/components/RandomAlbumButton";
-import { FaotyButton } from "@/components/FaotyButton";
+import { FaotyButton, FaotyBanner } from "@/components/FaotyButton";
 import { FLOCKIFY_POSTS } from "@/data/flockifyPosts";
 import type { Album } from "@/types";
 
@@ -54,6 +54,7 @@ export default function Home() {
       </header>
 
       <main className="max-w-3xl mx-auto">
+        <FaotyBanner albums={albums} />
         <Feed albums={albums} />
       </main>
     </div>

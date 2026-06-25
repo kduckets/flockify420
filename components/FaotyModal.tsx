@@ -8,7 +8,7 @@ import { useUIStore } from "@/store/uiStore";
 import { useAuth } from "@/context/AuthContext";
 import type { Album } from "@/types";
 
-const WINNERS: Record<number, { artist: string; title: string } | null> = {
+export const WINNERS: Record<number, { artist: string; title: string } | null> = {
   2016: { artist: "Radiohead", title: "A Moon Shaped Pool" },
   2017: { artist: "Kendrick Lamar", title: "Damn" },
   2018: { artist: "Ty Segall", title: "Freedom's Goblin" },
