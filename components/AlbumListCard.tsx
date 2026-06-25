@@ -156,42 +156,10 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
 
               {/* Description */}
               {album.description && (
-                <p className="mt-3 text-zinc-500 text-xs leading-relaxed italic">
+                <p className="mt-3 text-zinc-500 text-sm leading-relaxed italic">
                   {album.description}
                 </p>
               )}
-
-              {/* Vote buttons */}
-              <div className="mt-4 flex items-center gap-2">
-                <button
-                  onClick={() => handleVote(1)}
-                  title="Upvote (+1)"
-                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors cursor-pointer ${
-                    vote === 1 ? "bg-green-100 text-green-700 border border-green-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                </button>
-                <button
-                  onClick={() => handleVote(2)}
-                  title="Star (+2)"
-                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors cursor-pointer ${
-                    vote === 2 ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                </button>
-                <button
-                  onClick={() => handleVote(-1)}
-                  title="Downvote (−1)"
-                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors cursor-pointer ${
-                    vote === -1 ? "bg-red-100 text-red-600 border border-red-300" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700 border border-zinc-200"
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                {nudge && <span className="text-zinc-400 text-[10px] ml-1">Set a username first</span>}
-              </div>
             </div>
 
             <div className="mt-3">
@@ -244,6 +212,40 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                     ))
                   )}
                 </div>
+              )}
+            </div>
+
+            {/* Vote buttons */}
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                onClick={() => handleVote(1)}
+                title="Upvote (+1)"
+                className={`flex items-center justify-center w-7 h-7 rounded transition-colors cursor-pointer ${
+                  vote === 1 ? "bg-green-100 text-green-700 border border-green-300" : "bg-zinc-200 text-zinc-500 hover:text-zinc-700 border border-zinc-300"
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              </button>
+              <button
+                onClick={() => handleVote(2)}
+                title="Star (+2)"
+                className={`flex items-center justify-center w-7 h-7 rounded transition-colors cursor-pointer ${
+                  vote === 2 ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-zinc-200 text-zinc-500 hover:text-zinc-700 border border-zinc-300"
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={vote === 2 ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </button>
+              <button
+                onClick={() => handleVote(-1)}
+                title="Downvote (−1)"
+                className={`flex items-center justify-center w-7 h-7 rounded transition-colors cursor-pointer ${
+                  vote === -1 ? "bg-red-100 text-red-600 border border-red-300" : "bg-zinc-200 text-zinc-500 hover:text-zinc-700 border border-zinc-300"
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              {nudge && (
+                <span className="text-zinc-500 text-[8px] leading-tight text-center">set username</span>
               )}
             </div>
 
