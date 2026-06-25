@@ -12,13 +12,14 @@ function dc(): string {
 
 async function mailchimp(path: string, body?: unknown) {
   const res = await fetch(`https://${dc()}.api.mailchimp.com/3.0/${path}`, {
-    method: body ? "POST" : "GET",
+    method: "POST",
     headers: {
       Authorization: `Basic ${Buffer.from(`anystring:${API_KEY}`).toString("base64")}`,
       "Content-Type": "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 204) return {};
   return res.ok ? res.json() : Promise.reject(await res.text());
 }
 
