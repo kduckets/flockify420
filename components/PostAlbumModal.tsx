@@ -2,8 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import type { Album } from "@/types";
+
+function firebaseErrorMessage(err: unknown): string {
+  if (typeof err === "object" && err !== null && "code" in err) {
+    const code = (err as { code: string }).code;
+    if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found")
+      return "Invalid email or password.";
+    if (code === "auth/too-many-requests") return "Too many attempts — try again later.";
+    if (code === "auth/invalid-email") return "Invalid email address.";
+  }
+  return "Sign in failed. Try again.";
+}
 
 interface SearchResult {
   id: string;
@@ -115,8 +128,15 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
   const [posting, setPosting]         = useState(false);
   const [postError, setPostError]     = useState("");
 
-  const queryRef   = useRef<HTMLInputElement>(null);
+  const [showLogin, setShowLogin]     = useState(false);
+  const [loginEmail, setLoginEmail]   = useState("");
+  const [loginPass, setLoginPass]     = useState("");
+  const [loginError, setLoginError]   = useState("");
+  const [loginBusy, setLoginBusy]     = useState(false);
+
+  const queryRef    = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const emailRef    = useRef<HTMLInputElement>(null);
 
   // Escape closes
   useEffect(() => {
@@ -125,8 +145,23 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Focus search on open
-  useEffect(() => { setTimeout(() => queryRef.current?.focus(), 50); }, []);
+  // Focus search on open (skip if login form is showing)
+  useEffect(() => { if (!showLogin) setTimeout(() => queryRef.current?.focus(), 50); }, [showLogin]);
+  useEffect(() => { if (showLogin)  setTimeout(() => emailRef.current?.focus(), 50); }, [showLogin]);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginError("");
+    setLoginBusy(true);
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail, loginPass);
+      setShowLogin(false);
+      setLoginEmail(""); setLoginPass("");
+    } catch (err) {
+      setLoginError(firebaseErrorMessage(err));
+    }
+    setLoginBusy(false);
+  }
 
   // iOS scroll lock
   useEffect(() => {
@@ -268,9 +303,52 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
         {step === "search" && (
           <div className="flex flex-col flex-1 min-h-0">
             {/* Login gate */}
-            {!user && (
-              <div className="px-5 py-3 bg-zinc-900 border-b border-zinc-800 text-zinc-400 text-sm">
-                Sign in to post an album.
+            {!user && !showLogin && (
+              <div className="px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+                <span className="text-zinc-500 text-sm">Sign in to post an album.</span>
+                <button
+                  onClick={() => setShowLogin(true)}
+                  className="text-white text-sm font-semibold hover:text-zinc-300 transition-colors cursor-pointer"
+                >Sign in →</button>
+              </div>
+            )}
+
+            {/* Inline sign-in form */}
+            {!user && showLogin && (
+              <div className="px-5 py-4 bg-zinc-900 border-b border-zinc-800">
+                <p className="text-white font-semibold text-sm mb-3">Sign in to Flockify</p>
+                <form onSubmit={handleLogin} className="space-y-2.5">
+                  <input
+                    ref={emailRef}
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="Email"
+                    autoComplete="email"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                  />
+                  <input
+                    type="password"
+                    value={loginPass}
+                    onChange={(e) => setLoginPass(e.target.value)}
+                    placeholder="Password"
+                    autoComplete="current-password"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
+                  />
+                  {loginError && <p className="text-red-400 text-xs">{loginError}</p>}
+                  <div className="flex gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => { setShowLogin(false); setLoginError(""); }}
+                      className="flex-1 py-1.5 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors"
+                    >Cancel</button>
+                    <button
+                      type="submit"
+                      disabled={loginBusy || !loginEmail || !loginPass}
+                      className="flex-1 py-1.5 bg-white hover:bg-zinc-200 text-black font-semibold rounded text-sm cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >{loginBusy ? "Signing in…" : "Sign in"}</button>
+                  </div>
+                </form>
               </div>
             )}
 
