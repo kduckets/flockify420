@@ -335,7 +335,20 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                     ))}
                   </div>
                 )}
-                <p className="text-zinc-500 text-xs mt-1">
+                {album.labels[0] && (
+                  <p className="text-zinc-500 text-[11px] mt-1">{album.labels[0]}</p>
+                )}
+                {(album.genre.length > 0 || album.tags.length > 0) && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {album.genre.slice(0, 2).map((g) => (
+                      <span key={g} className="px-2 py-0.5 bg-zinc-800 text-zinc-400 text-xs rounded">{g}</span>
+                    ))}
+                    {album.tags.slice(0, 3).map((t) => (
+                      <span key={t} className="px-2 py-0.5 bg-zinc-900 text-zinc-500 text-xs rounded">{t}</span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-zinc-500 text-xs mt-1.5">
                   posted by <span className="text-zinc-300">{album.creatorName || "unknown"}</span>
                 </p>
               </div>
