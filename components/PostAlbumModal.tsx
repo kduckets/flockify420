@@ -511,6 +511,12 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
                 <ChipInput values={genres} onChange={setGenres} suggestions={allGenres} placeholder="e.g. Rock, Jazz…" />
               </div>
 
+              {/* Tags */}
+              <div>
+                <label className="block text-zinc-400 text-xs mb-1.5 font-medium">Tags <span className="text-zinc-600">(styles, moods, etc.)</span></label>
+                <ChipInput values={tags} onChange={setTags} suggestions={allTags} placeholder="e.g. Indie, Shoegaze…" />
+              </div>
+
               {/* Label — read-only, first from Discogs */}
               {(labels[0] || enriching) && (
                 <div>
@@ -525,12 +531,6 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
                   )}
                 </div>
               )}
-
-              {/* Tags */}
-              <div>
-                <label className="block text-zinc-400 text-xs mb-1.5 font-medium">Tags <span className="text-zinc-600">(styles, moods, etc.)</span></label>
-                <ChipInput values={tags} onChange={setTags} suggestions={allTags} placeholder="e.g. Indie, Shoegaze…" />
-              </div>
 
               {postError && <p className="text-red-400 text-xs">{postError}</p>}
             </div>
