@@ -243,9 +243,6 @@ export function AlbumListCard({ album, allAlbums, onDelete }: AlbumListCardProps
               >
                 {displayScore < 0 ? String(displayScore) : displayScore}
               </button>
-              {voterCount > 0 && (
-                <span className="text-[9px] text-zinc-500 leading-none">{voterCount}</span>
-              )}
               {vote !== 0 && (
                 <span className={`text-[9px] leading-none font-bold ${vote === 2 ? "text-amber-500" : vote === 1 ? "text-green-600" : "text-red-500"}`}>
                   {voteLabel(vote)}
