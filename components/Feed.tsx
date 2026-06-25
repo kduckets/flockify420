@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { AlbumListCard } from "./AlbumListCard";
 import { AlbumGridCard } from "./AlbumGridCard";
+import { PostAlbumModal } from "./PostAlbumModal";
 import { useAlbumStore } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { useAuth } from "@/context/AuthContext";
@@ -32,6 +33,8 @@ export function Feed({ albums }: FeedProps) {
   const [monthFilter, setMonthFilter]   = useState<number | null>(null);
   const [searchOpen, setSearchOpen]     = useState(false);
   const [searchQuery, setSearchQuery]   = useState("");
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [dynamicAlbums, setDynamicAlbums] = useState<Album[]>([]);
   const searchRef                       = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
@@ -44,23 +47,42 @@ export function Feed({ albums }: FeedProps) {
   const lastCommentAt = useAveragesStore((s) => s.lastCommentAt);
   const fetchScores   = useAveragesStore((s) => s.fetchScores);
 
-  const albumIds = albums.map((a) => a.id);
+  // Merge dynamic + static albums (dynamic on top since they have higher postOrder)
+  const allAlbums = useMemo(() => [...dynamicAlbums, ...albums], [dynamicAlbums, albums]);
+  const albumIds  = useMemo(() => allAlbums.map((a) => a.id), [allAlbums]);
+
+  // Load dynamic posts on mount
+  useEffect(() => {
+    fetch("/api/dynamic-posts")
+      .then((r) => r.json())
+      .then((data) => { if (data.albums) setDynamicAlbums(data.albums); })
+      .catch(() => {});
+  }, []);
+
+  // Existing genres/labels/tags for autocomplete
+  const allGenres = useMemo(() => [...new Set(allAlbums.flatMap((a) => a.genre))].sort(), [allAlbums]);
+  const allLabels = useMemo(() => [...new Set(allAlbums.flatMap((a) => a.labels))].sort(), [allAlbums]);
+  const allTags   = useMemo(() => [...new Set(allAlbums.flatMap((a) => a.tags))].sort(), [allAlbums]);
+  const existingSet = useMemo(
+    () => new Set(allAlbums.map((a) => `${a.title.toLowerCase()}::${a.artist.toLowerCase()}`)),
+    [allAlbums]
+  );
 
   // Year + month breakdowns
   const years = useMemo(() => {
-    const ys = [...new Set(albums.map((a) => new Date(a.postOrder).getFullYear()))];
+    const ys = [...new Set(allAlbums.map((a) => new Date(a.postOrder).getFullYear()))];
     return ys.sort((a, b) => b - a);
-  }, [albums]);
+  }, [allAlbums]);
 
   const monthsForYear = useMemo(() => {
     if (!yearFilter) return [];
     const ms = [...new Set(
-      albums
+      allAlbums
         .filter((a) => new Date(a.postOrder).getFullYear() === yearFilter)
         .map((a) => new Date(a.postOrder).getMonth())
     )];
     return ms.sort((a, b) => a - b);
-  }, [albums, yearFilter]);
+  }, [allAlbums, yearFilter]);
 
   const refresh = useCallback(async () => {
     fetchScores(albumIds);
@@ -102,6 +124,7 @@ export function Feed({ albums }: FeedProps) {
       setMonthFilter(null);
       setSearchOpen(false);
       setSearchQuery("");
+      setShowPostModal(false);
     }
     window.addEventListener("reset-feed", reset);
     return () => window.removeEventListener("reset-feed", reset);
@@ -111,7 +134,7 @@ export function Feed({ albums }: FeedProps) {
 
   const filteredAndSorted = useMemo(() => {
     const dir = sortDir === "desc" ? 1 : -1;
-    const filtered = albums.filter((a) => {
+    const filtered = allAlbums.filter((a) => {
       if (searchLower && !a.title.toLowerCase().includes(searchLower) && !a.artist.toLowerCase().includes(searchLower) && !(a.description ?? "").toLowerCase().includes(searchLower)) return false;
       if (statusFilter === "voted"    && !votes[a.id])                    return false;
       if (statusFilter === "unvoted"  && votes[a.id])                     return false;
@@ -127,13 +150,26 @@ export function Feed({ albums }: FeedProps) {
         case "comments": return dir * ((lastCommentAt[b.id] ?? 0) - (lastCommentAt[a.id] ?? 0));
       }
     });
-  }, [albums, sortOrder, sortDir, scores, lastCommentAt, searchLower, statusFilter, votes, favoritedAlbums]);
+  }, [allAlbums, sortOrder, sortDir, scores, lastCommentAt, searchLower, statusFilter, votes, favoritedAlbums, yearFilter, monthFilter]);
 
-  const votedCount  = albums.filter((a) => votes[a.id]).length;
+  const votedCount  = allAlbums.filter((a) => votes[a.id]).length;
   const totalGifs   = Object.values(comments).reduce((n, arr) => n + arr.length, 0);
 
   return (
     <div>
+      {/* Post an album */}
+      <div className="flex justify-center border-b border-zinc-900 py-2">
+        <button
+          onClick={() => setShowPostModal(true)}
+          className="flex items-center gap-2 text-zinc-600 hover:text-zinc-300 text-xs tracking-wide transition-colors cursor-pointer px-3 py-1.5"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
+          </svg>
+          post an album
+        </button>
+      </div>
+
       {/* Sort tabs + view toggle */}
       <div className="flex items-center border-b border-zinc-900">
         {SORT_TABS.map(({ label, value }) => (
@@ -262,7 +298,7 @@ export function Feed({ albums }: FeedProps) {
             statusFilter === "all" ? "bg-white text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
           }`}
         >
-          {albums.length} albums
+          {allAlbums.length} albums
         </button>
         {votedCount > 0 && (
           <button
@@ -293,7 +329,7 @@ export function Feed({ albums }: FeedProps) {
             <div className="text-center py-20 text-zinc-600 text-sm">No albums match.</div>
           ) : (
             filteredAndSorted.map((album) => (
-              <AlbumListCard key={album.id} album={album} allAlbums={albums} />
+              <AlbumListCard key={album.id} album={album} allAlbums={allAlbums} />
             ))
           )}
         </div>
@@ -304,11 +340,22 @@ export function Feed({ albums }: FeedProps) {
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2">
               {filteredAndSorted.map((album) => (
-                <AlbumGridCard key={album.id} album={album} allAlbums={albums} />
+                <AlbumGridCard key={album.id} album={album} allAlbums={allAlbums} />
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {showPostModal && (
+        <PostAlbumModal
+          onClose={() => setShowPostModal(false)}
+          existingSet={existingSet}
+          allGenres={allGenres}
+          allLabels={allLabels}
+          allTags={allTags}
+          onPosted={(album) => setDynamicAlbums((prev) => [album, ...prev])}
+        />
       )}
     </div>
   );
