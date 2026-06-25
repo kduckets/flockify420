@@ -36,9 +36,11 @@ export function AlbumGridCard({ album, allAlbums }: { album: Album; allAlbums: A
         <div className="absolute bottom-0 left-0 right-0 bg-black/75 flex items-center justify-between px-1.5 py-1 gap-1">
           {/* Community score */}
           <div className="flex items-center gap-0.5 min-w-0">
-            <span className={`text-[10px] font-bold leading-none tabular-nums ${score > 0 ? "text-green-400" : score < 0 ? "text-red-400" : "text-zinc-500"}`}>
-              {voterCount > 0 ? (score >= 0 ? `+${score}` : String(score)) : "—"}
-            </span>
+            {(() => { const s = voterCount > 0 ? score : album.legacyScore; return (
+              <span className={`text-[10px] font-bold leading-none tabular-nums ${s > 0 ? "text-green-400" : s < 0 ? "text-red-400" : "text-zinc-500"}`}>
+                {s >= 0 ? `+${s}` : String(s)}
+              </span>
+            ); })()}
           </div>
 
           {/* User vote indicator */}

@@ -93,7 +93,7 @@ export function Feed({ albums }: FeedProps) {
     return [...filtered].sort((a, b) => {
       switch (sortOrder) {
         case "new":      return dir * ((b.postOrder ?? -1) - (a.postOrder ?? -1));
-        case "top":      return dir * ((scores[b.id] ?? 0) - (scores[a.id] ?? 0));
+        case "top":      return dir * ((scores[b.id] ?? b.legacyScore) - (scores[a.id] ?? a.legacyScore));
         case "comments": return dir * ((lastCommentAt[b.id] ?? 0) - (lastCommentAt[a.id] ?? 0));
       }
     });

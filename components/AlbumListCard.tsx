@@ -34,7 +34,7 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
 
   const [displayScore, setDisplayScore] = useState(0);
   const animRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const targetScore = score;
+  const targetScore = voterCount > 0 ? score : album.legacyScore;
 
   useEffect(() => {
     if (animRef.current) clearInterval(animRef.current);
@@ -142,6 +142,17 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
                 {album.title}{album.year ? ` (${album.year})` : ""}
               </a>
 
+              {/* Legacy stars */}
+              {album.legacyStars > 0 && (
+                <div className="flex gap-0.5 mt-1">
+                  {Array.from({ length: album.legacyStars }).map((_, i) => (
+                    <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ))}
+                </div>
+              )}
+
               {/* Tags */}
               {(album.labels.length > 0 || album.genre.length > 0) && (
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -181,9 +192,9 @@ export function AlbumListCard({ album, allAlbums }: AlbumListCardProps) {
               <button
                 onClick={openVoters}
                 className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 cursor-pointer hover:bg-zinc-800 transition-colors tabular-nums"
-                title={voterCount > 0 ? `Score: ${score} · ${voterCount} voter${voterCount !== 1 ? "s" : ""}` : "No votes yet"}
+                title={voterCount > 0 ? `Score: ${score} · ${voterCount} voter${voterCount !== 1 ? "s" : ""}` : `Legacy score: ${album.legacyScore}`}
               >
-                {voterCount > 0 ? (displayScore >= 0 ? `+${displayScore}` : String(displayScore)) : "—"}
+                {displayScore >= 0 ? `+${displayScore}` : String(displayScore)}
               </button>
               {voterCount > 0 && (
                 <span className="text-[9px] text-zinc-500 leading-none">{voterCount}</span>
