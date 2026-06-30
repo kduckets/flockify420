@@ -7,12 +7,11 @@ import { getFlockifyUsername } from "@/data/uidToUsername";
 import { GifModal } from "./GifModal";
 import type { Album } from "@/types";
 
-type Tab = "starred" | "upvoted" | "saved" | "posted";
+type Tab = "starred" | "upvoted" | "posted";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "starred",  label: "Starred",  icon: "★" },
   { id: "upvoted",  label: "Upvoted",  icon: "↑" },
-  { id: "saved",    label: "Saved",    icon: "♥" },
   { id: "posted",   label: "Posted",   icon: "+" },
 ];
 
@@ -28,9 +27,8 @@ export function MyPicksModal({ albums, onClose }: Props) {
   const [gifAlbum, setGifAlbum]     = useState<Album | null>(null);
 
   const { user } = useAuth();
-  const votes           = useAlbumStore((s) => s.votes);
-  const favoritedAlbums = useAlbumStore((s) => s.favoritedAlbums);
-  const dynamicAlbums   = useAlbumStore((s) => s.dynamicAlbums);
+  const votes         = useAlbumStore((s) => s.votes);
+  const dynamicAlbums = useAlbumStore((s) => s.dynamicAlbums);
 
   const allAlbums = useMemo(() => [...dynamicAlbums, ...albums], [dynamicAlbums, albums]);
 
@@ -44,12 +42,11 @@ export function MyPicksModal({ albums, onClose }: Props) {
         (flockifyName && a.creatorName && a.creatorName.toLowerCase() === flockifyName.toLowerCase())
       );
     }
-    let ids: string[];
-    if (tab === "starred")      ids = Object.entries(votes).filter(([, v]) => v === 2).map(([id]) => id);
-    else if (tab === "upvoted") ids = Object.entries(votes).filter(([, v]) => v === 1).map(([id]) => id);
-    else                        ids = [...favoritedAlbums];
+    const ids = Object.entries(votes)
+      .filter(([, v]) => tab === "starred" ? v === 2 : v === 1)
+      .map(([id]) => id);
     return allAlbums.filter((a) => ids.includes(a.id));
-  }, [tab, votes, favoritedAlbums, allAlbums, user?.uid, flockifyName]);
+  }, [tab, votes, allAlbums, user?.uid, flockifyName]);
 
   // Clear filter when tab changes
   useEffect(() => setFilter(null), [tab]);
@@ -81,14 +78,13 @@ export function MyPicksModal({ albums, onClose }: Props) {
 
   // Counts per tab
   const counts: Record<Tab, number> = useMemo(() => ({
-    starred:  Object.values(votes).filter((v) => v === 2).length,
-    upvoted:  Object.values(votes).filter((v) => v === 1).length,
-    saved:    favoritedAlbums.length,
-    posted:   allAlbums.filter((a) =>
+    starred: Object.values(votes).filter((v) => v === 2).length,
+    upvoted: Object.values(votes).filter((v) => v === 1).length,
+    posted:  allAlbums.filter((a) =>
       (a.userId && a.userId === user?.uid) ||
       (flockifyName && a.creatorName && a.creatorName.toLowerCase() === flockifyName.toLowerCase())
     ).length,
-  }), [votes, favoritedAlbums, allAlbums, user?.uid, flockifyName]);
+  }), [votes, allAlbums, user?.uid, flockifyName]);
 
   return (
     <>
@@ -218,9 +214,6 @@ export function MyPicksModal({ albums, onClose }: Props) {
                     )}
                     {votes[album.id] === 1 && (
                       <span className="text-[11px] text-zinc-400">↑</span>
-                    )}
-                    {favoritedAlbums.includes(album.id) && (
-                      <span className="text-[11px] text-red-400">♥</span>
                     )}
                   </div>
                 </li>
