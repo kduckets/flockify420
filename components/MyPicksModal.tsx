@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useAlbumStore } from "@/store/albumStore";
 import { useAuth } from "@/context/AuthContext";
+import { getFlockifyUsername } from "@/data/uidToUsername";
 import { GifModal } from "./GifModal";
 import type { Album } from "@/types";
 
@@ -33,15 +34,22 @@ export function MyPicksModal({ albums, onClose }: Props) {
 
   const allAlbums = useMemo(() => [...dynamicAlbums, ...albums], [dynamicAlbums, albums]);
 
+  const flockifyName = user ? getFlockifyUsername(user.uid) : null;
+
   // Albums for each tab
   const tabAlbums = useMemo(() => {
-    if (tab === "posted") return allAlbums.filter((a) => a.userId && a.userId === user?.uid);
+    if (tab === "posted") {
+      return allAlbums.filter((a) =>
+        (a.userId && a.userId === user?.uid) ||
+        (flockifyName && a.creatorName && a.creatorName.toLowerCase() === flockifyName.toLowerCase())
+      );
+    }
     let ids: string[];
     if (tab === "starred")      ids = Object.entries(votes).filter(([, v]) => v === 2).map(([id]) => id);
     else if (tab === "upvoted") ids = Object.entries(votes).filter(([, v]) => v === 1).map(([id]) => id);
     else                        ids = [...favoritedAlbums];
     return allAlbums.filter((a) => ids.includes(a.id));
-  }, [tab, votes, favoritedAlbums, allAlbums, user?.uid]);
+  }, [tab, votes, favoritedAlbums, allAlbums, user?.uid, flockifyName]);
 
   // Clear filter when tab changes
   useEffect(() => setFilter(null), [tab]);
@@ -76,8 +84,11 @@ export function MyPicksModal({ albums, onClose }: Props) {
     starred:  Object.values(votes).filter((v) => v === 2).length,
     upvoted:  Object.values(votes).filter((v) => v === 1).length,
     saved:    favoritedAlbums.length,
-    posted:   allAlbums.filter((a) => a.userId && a.userId === user?.uid).length,
-  }), [votes, favoritedAlbums, allAlbums, user?.uid]);
+    posted:   allAlbums.filter((a) =>
+      (a.userId && a.userId === user?.uid) ||
+      (flockifyName && a.creatorName && a.creatorName.toLowerCase() === flockifyName.toLowerCase())
+    ).length,
+  }), [votes, favoritedAlbums, allAlbums, user?.uid, flockifyName]);
 
   return (
     <>
