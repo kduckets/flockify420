@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { useUIStore } from "@/store/uiStore";
-import { getUsername, setUsername, hasSetUsername, getEffectiveUserId } from "@/lib/identity";
 import { getFlockifyUsername } from "@/data/uidToUsername";
 import { useAuth } from "@/context/AuthContext";
 import type { Album, GifComment } from "@/types";
@@ -26,15 +25,13 @@ function timeAgo(ts: number) {
 }
 
 
-type AddMode = "default" | "name-prompt" | "search" | "paste";
+type AddMode = "default" | "search" | "paste";
 
 interface GifResult { id: string; title: string; url: string; preview: string }
 
 export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalProps) {
   const [album, setAlbum]             = useState(initialAlbum);
   const [addMode, setAddMode]         = useState<AddMode>("default");
-  const [pendingMode, setPendingMode] = useState<"search" | "paste" | null>(null);
-  const [nameInput, setNameInput]     = useState("");
   const [query, setQuery]             = useState("");
   const [results, setResults]         = useState<GifResult[]>([]);
   const [searching, setSearching]     = useState(false);
@@ -57,7 +54,6 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const backdropRef = useRef<HTMLDivElement>(null);
   const searchRef   = useRef<HTMLInputElement>(null);
   const pasteRef    = useRef<HTMLInputElement>(null);
-  const nameRef     = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
   const vote            = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
@@ -70,7 +66,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const setScore        = useAveragesStore((s) => s.setScore);
   const openSignInModal = useUIStore((s) => s.openSignInModal);
 
-  const visitorId  = user?.uid ?? getEffectiveUserId();
+  const visitorId  = user?.uid ?? "";
   const spotifyUrl = album.spotifyUri || `https://open.spotify.com/search/${encodeURIComponent(`${album.title} ${album.artist}`)}`;
   const appleMusicUrl = `https://music.apple.com/search?term=${encodeURIComponent(`${album.title} ${album.artist}`)}`;
 
@@ -111,8 +107,6 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
 
   useEffect(() => { if (addMode === "search") searchRef.current?.focus(); }, [addMode]);
   useEffect(() => { if (addMode === "paste")  pasteRef.current?.focus();  }, [addMode]);
-  useEffect(() => { if (addMode === "name-prompt") nameRef.current?.focus(); }, [addMode]);
-
   async function handleVote(newVote: VoteValue) {
     if (!user) {
       openSignInModal();
@@ -156,18 +150,11 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   });
 
   function startAddMode(mode: "search" | "paste") {
-    // If logged in or anonymous, skip the name prompt entirely
-    if (!hasSetUsername() && !user) {
-      setUsername("anon");
+    if (!user) {
+      openSignInModal();
+      return;
     }
     setAddMode(mode);
-  }
-
-  function confirmName() {
-    setUsername(nameInput);
-    const next = pendingMode ?? "search";
-    setPendingMode(null);
-    setAddMode(next);
   }
 
   async function postComment(url: string) {
@@ -179,7 +166,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
         body: JSON.stringify({
           albumId: album.id,
           gifUrl: url,
-          author: (user ? getFlockifyUsername(user.uid) : null) ?? getUsername(),
+          author: getFlockifyUsername(user?.uid) ?? user?.displayName ?? user?.email?.split("@")[0] ?? "",
           visitorId,
         }),
       });
@@ -248,8 +235,6 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
     setGifUrl(""); setPreview(""); setPasteErr(false);
   }
 
-  const myName = hasSetUsername() ? getUsername() : null;
-
   return (
     <div
       ref={backdropRef}
@@ -270,14 +255,6 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
             </span>
           </button>
           <div className="flex items-center gap-4">
-            {!user && myName !== null && (
-              <button
-                onClick={() => { setAddMode("name-prompt"); setNameInput(myName); }}
-                className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors cursor-pointer"
-              >
-                {myName || "anon"} · <span className="text-zinc-700">change</span>
-              </button>
-            )}
             <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors cursor-pointer text-lg leading-none">✕</button>
           </div>
         </div>
@@ -433,29 +410,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
 
               {/* Add GIF */}
               <div>
-                {addMode !== "name-prompt" && (
-                  <p className="text-zinc-400 text-sm mb-3">Add a gif comment:</p>
-                )}
-
-                {addMode === "name-prompt" && (
-                  <div className="space-y-3">
-                    <p className="text-zinc-400 text-sm">What should we call you?</p>
-                    <input
-                      ref={nameRef}
-                      type="text"
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && confirmName()}
-                      placeholder="Your name (leave blank for anonymous)"
-                      maxLength={32}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors"
-                    />
-                    <div className="flex gap-2">
-                      <button onClick={resetAdd} className="flex-1 py-2 border border-zinc-700 hover:border-zinc-500 rounded text-sm text-zinc-400 cursor-pointer transition-colors">Cancel</button>
-                      <button onClick={confirmName} className="flex-1 py-2 bg-white text-black font-semibold rounded text-sm cursor-pointer hover:bg-zinc-200 transition-colors">Continue</button>
-                    </div>
-                  </div>
-                )}
+                <p className="text-zinc-400 text-sm mb-3">Add a gif comment:</p>
 
                 {addMode === "default" && (
                   <div className="flex gap-3">

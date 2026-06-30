@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
@@ -132,7 +133,7 @@ export function LoginButton({ albumIds }: Props) {
       </button>
 
       {/* Sign-in / reset modal */}
-      {open && !user && (
+      {open && !user && createPortal(
         <div
           className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
@@ -202,11 +203,12 @@ export function LoginButton({ albumIds }: Props) {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Profile / sign-out modal */}
-      {open && user && (
+      {open && user && createPortal(
         <div
           className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
@@ -232,7 +234,8 @@ export function LoginButton({ albumIds }: Props) {
               >Sign out</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
