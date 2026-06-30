@@ -2,15 +2,17 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useAlbumStore } from "@/store/albumStore";
+import { useAuth } from "@/context/AuthContext";
 import { GifModal } from "./GifModal";
 import type { Album } from "@/types";
 
-type Tab = "starred" | "upvoted" | "saved";
+type Tab = "starred" | "upvoted" | "saved" | "posted";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "starred",  label: "Starred",  icon: "★" },
   { id: "upvoted",  label: "Upvoted",  icon: "↑" },
   { id: "saved",    label: "Saved",    icon: "♥" },
+  { id: "posted",   label: "Posted",   icon: "+" },
 ];
 
 interface Props {
@@ -24,6 +26,7 @@ export function MyPicksModal({ albums, onClose }: Props) {
   const [sortMode, setSortMode]     = useState<"new" | "alpha">("new");
   const [gifAlbum, setGifAlbum]     = useState<Album | null>(null);
 
+  const { user } = useAuth();
   const votes           = useAlbumStore((s) => s.votes);
   const favoritedAlbums = useAlbumStore((s) => s.favoritedAlbums);
   const dynamicAlbums   = useAlbumStore((s) => s.dynamicAlbums);
@@ -32,12 +35,13 @@ export function MyPicksModal({ albums, onClose }: Props) {
 
   // Albums for each tab
   const tabAlbums = useMemo(() => {
+    if (tab === "posted") return allAlbums.filter((a) => a.userId && a.userId === user?.uid);
     let ids: string[];
-    if (tab === "starred")  ids = Object.entries(votes).filter(([, v]) => v === 2).map(([id]) => id);
+    if (tab === "starred")      ids = Object.entries(votes).filter(([, v]) => v === 2).map(([id]) => id);
     else if (tab === "upvoted") ids = Object.entries(votes).filter(([, v]) => v === 1).map(([id]) => id);
-    else ids = [...favoritedAlbums];
+    else                        ids = [...favoritedAlbums];
     return allAlbums.filter((a) => ids.includes(a.id));
-  }, [tab, votes, favoritedAlbums, allAlbums]);
+  }, [tab, votes, favoritedAlbums, allAlbums, user?.uid]);
 
   // Clear filter when tab changes
   useEffect(() => setFilter(null), [tab]);
@@ -72,7 +76,8 @@ export function MyPicksModal({ albums, onClose }: Props) {
     starred:  Object.values(votes).filter((v) => v === 2).length,
     upvoted:  Object.values(votes).filter((v) => v === 1).length,
     saved:    favoritedAlbums.length,
-  }), [votes, favoritedAlbums]);
+    posted:   allAlbums.filter((a) => a.userId && a.userId === user?.uid).length,
+  }), [votes, favoritedAlbums, allAlbums, user?.uid]);
 
   return (
     <>
