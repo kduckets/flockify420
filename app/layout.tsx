@@ -13,6 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
   title: {
     default: "Flockify 4.2.0",

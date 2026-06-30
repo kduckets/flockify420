@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { pipeline } from "@/lib/redis";
+import { ref } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -13,29 +13,21 @@ export async function POST(req: Request) {
   const createdTs = new Date().toISOString();
   const timestamp = Date.now();
 
-  const hsetArgs: (string | number)[] = [
-    `post:${id}`,
-    "album",       String(album).trim(),
-    "artist",      String(artist).trim(),
-    "artworkUrl",  String(artworkUrl ?? ""),
-    "spotifyUri",  String(spotifyUri ?? ""),
-    "releaseDate", String(releaseDate ?? ""),
-    "summary",     String(summary ?? ""),
-    "labels",      JSON.stringify(Array.isArray(labels) ? labels : []),
-    "genre",       JSON.stringify(Array.isArray(genre)  ? genre  : []),
-    "tags",        JSON.stringify(Array.isArray(tags)   ? tags   : []),
-    "creatorName", String(creatorName ?? "Anonymous"),
-    "userId",      String(userId ?? ""),
-    "createdTs",   createdTs,
-    "score",       "0",
-    "stars",       "0",
-    "commentCount","0",
-  ];
-
-  await pipeline([
-    ["ZADD", "dyn_posts", timestamp, id],
-    ["HSET", ...hsetArgs],
-  ]);
+  await ref(`posts/${id}`).set({
+    album:       String(album).trim(),
+    artist:      String(artist).trim(),
+    artworkUrl:  String(artworkUrl ?? ""),
+    spotifyUri:  String(spotifyUri ?? ""),
+    releaseDate: String(releaseDate ?? ""),
+    summary:     String(summary ?? ""),
+    labels:      Array.isArray(labels) ? labels : [],
+    genre:       Array.isArray(genre)  ? genre  : [],
+    tags:        Array.isArray(tags)   ? tags   : [],
+    creatorName: String(creatorName ?? "Anonymous"),
+    userId:      String(userId ?? ""),
+    createdTs,
+    postOrder:   timestamp,
+  });
 
   return NextResponse.json({ id, createdTs });
 }

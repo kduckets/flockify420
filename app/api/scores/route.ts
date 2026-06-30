@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pipeline, scoreFromHgetall } from "@/lib/redis";
+import { ref, scoreFromVotes } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   const { ids }: { ids: string[] } = await req.json();
   if (!ids?.length) return NextResponse.json({ scores: {}, commentCounts: {}, voterCounts: {} });
 
-  // Per-album: HGETALL v:{id} (votes) + HLEN c:{id} (comment count)
-  // Plus one extra command for last-comment timestamps
-  const cmds = [
-    ...ids.flatMap((id) => [["HGETALL", `v:${id}`], ["HLEN", `c:${id}`]]),
-    ["HGETALL", "c:last-comment"],
-  ];
-  const results = await pipeline(cmds);
+  const [votesResults, commentResults, lastCommentSnap] = await Promise.all([
+    Promise.all(ids.map((id) => ref(`votes/${id}`).get())),
+    Promise.all(ids.map((id) => ref(`comments/${id}`).get())),
+    ref("lastComment").get(),
+  ]);
 
   const scores: Record<string, number> = {};
   const commentCounts: Record<string, number> = {};
@@ -19,26 +17,23 @@ export async function POST(req: NextRequest) {
   const starCounts: Record<string, number> = {};
 
   ids.forEach((id, i) => {
-    const raw = results[i * 2]?.result;
-    const { score, count, stars } = scoreFromHgetall(raw);
+    const { score, count, stars } = scoreFromVotes(votesResults[i].val());
     if (count > 0) {
       scores[id] = score;
       voterCounts[id] = count;
       if (stars > 0) starCounts[id] = stars;
     }
-    const commentCount = typeof results[i * 2 + 1]?.result === "number"
-      ? (results[i * 2 + 1].result as number)
-      : 0;
+
+    const commentsVal = commentResults[i].val();
+    const commentCount = commentsVal ? Object.keys(commentsVal).length : 0;
     if (commentCount > 0) commentCounts[id] = commentCount;
   });
 
-  // Last-comment timestamps (for recency sort)
-  const lastCommentRaw = results[ids.length * 2]?.result;
   const lastCommentAt: Record<string, number> = {};
-  if (Array.isArray(lastCommentRaw)) {
-    for (let i = 0; i < lastCommentRaw.length - 1; i += 2) {
-      const ts = Number(lastCommentRaw[i + 1]);
-      if (!isNaN(ts)) lastCommentAt[String(lastCommentRaw[i])] = ts;
+  const lastCommentVal = lastCommentSnap.val() as Record<string, number> | null;
+  if (lastCommentVal) {
+    for (const [albumId, ts] of Object.entries(lastCommentVal)) {
+      if (!isNaN(Number(ts))) lastCommentAt[albumId] = Number(ts);
     }
   }
 

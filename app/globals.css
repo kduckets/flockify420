@@ -33,6 +33,14 @@ body {
   background: #52525b;
 }
 
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadein {
+  animation: fadein 0.4s ease-out both;
+}
+
 /* Mobile rating slider */
 input[type="range"].rating-slider {
   -webkit-appearance: none;

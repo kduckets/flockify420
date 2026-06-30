@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pipeline, parseHgetall } from "@/lib/redis";
+import { ref } from "@/lib/firebase-admin";
 import type { GifComment } from "@/types";
-
-function commentKey(albumId: string) { return `c:${albumId}`; }
 
 export async function GET(req: NextRequest) {
   const albumId = req.nextUrl.searchParams.get("albumId");
   if (!albumId) return NextResponse.json({ comments: [] });
 
-  const [res] = await pipeline([["HGETALL", commentKey(albumId)]]);
-  const raw = parseHgetall(res.result);
+  const snap = await ref(`comments/${albumId}`).get();
+  const val = snap.val() as Record<string, GifComment> | null;
 
-  const comments: GifComment[] = Object.values(raw)
-    .map((v) => { try { return JSON.parse(v) as GifComment; } catch { return null; } })
-    .filter(Boolean) as GifComment[];
-
+  const comments: GifComment[] = val ? Object.values(val) : [];
   comments.sort((a, b) => a.timestamp - b.timestamp);
   return NextResponse.json({ comments });
 }
@@ -35,10 +30,11 @@ export async function POST(req: NextRequest) {
     timestamp: Date.now(),
   };
 
-  await pipeline([
-    ["HSET", commentKey(albumId), comment.id, JSON.stringify(comment)],
-    ["HSET", "c:last-comment", albumId, String(comment.timestamp)],
+  await Promise.all([
+    ref(`comments/${albumId}/${comment.id}`).set(comment),
+    ref(`lastComment/${albumId}`).set(comment.timestamp),
   ]);
+
   return NextResponse.json({ comment });
 }
 
@@ -49,16 +45,13 @@ export async function DELETE(req: NextRequest) {
   if (!albumId || !commentId || !visitorId)
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
-  const [res] = await pipeline([["HGET", commentKey(albumId), commentId]]);
-  if (!res.result) return NextResponse.json({ error: "not found" }, { status: 404 });
+  const snap = await ref(`comments/${albumId}/${commentId}`).get();
+  if (!snap.exists()) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  let comment: GifComment;
-  try { comment = JSON.parse(res.result as string); }
-  catch { return NextResponse.json({ error: "parse error" }, { status: 500 }); }
-
+  const comment = snap.val() as GifComment;
   if (comment.visitorId !== visitorId)
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  await pipeline([["HDEL", commentKey(albumId), commentId]]);
+  await ref(`comments/${albumId}/${commentId}`).remove();
   return NextResponse.json({ ok: true });
 }

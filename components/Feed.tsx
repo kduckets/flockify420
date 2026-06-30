@@ -36,6 +36,7 @@ export function Feed({ albums }: FeedProps) {
   const [chipFilter, setChipFilter]     = useState<string | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
   const [visibleCount, setVisibleCount]   = useState(40);
+  const [ready, setReady]                 = useState(false);
   const searchRef   = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -57,13 +58,19 @@ export function Feed({ albums }: FeedProps) {
   const allAlbums = useMemo(() => [...dynamicAlbums, ...albums], [dynamicAlbums, albums]);
   const albumIds  = useMemo(() => allAlbums.map((a) => a.id), [allAlbums]);
 
-  // Revalidate dynamic posts in background on mount (stale-while-revalidate)
+  // Fetch dynamic posts + scores, then reveal the feed together
   useEffect(() => {
-    fetch("/api/dynamic-posts")
+    const dynFetch = fetch("/api/dynamic-posts")
       .then((r) => r.json())
-      .then((data) => { if (data.albums) setDynamicAlbums(data.albums); })
-      .catch(() => {});
-  }, [setDynamicAlbums]);
+      .then((data) => { if (data.albums) setDynamicAlbums(data.albums); return data.albums ?? []; })
+      .catch(() => []);
+
+    dynFetch.then((dynAlbums: Album[]) => {
+      const allIds = [...dynAlbums.map((a: Album) => a.id), ...albums.map((a) => a.id)];
+      return fetchScores(allIds);
+    }).finally(() => setReady(true));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Existing genres/labels/tags for autocomplete
   const allGenres = useMemo(() => [...new Set(allAlbums.flatMap((a) => a.genre))].sort(), [allAlbums]);
@@ -114,8 +121,6 @@ export function Feed({ albums }: FeedProps) {
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
-
-  useEffect(() => { refresh(); }, [refresh]);
 
   useEffect(() => {
     function onVisible() { if (document.visibilityState === "visible") refresh(); }
@@ -358,8 +363,20 @@ export function Feed({ albums }: FeedProps) {
         )}
       </div>
 
-      {viewMode === "classic" ? (
-        <div className="flex flex-col gap-3 py-3 px-2 sm:px-0">
+      {!ready ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <svg
+            className="animate-spin text-zinc-700"
+            width="22" height="22" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round"
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span className="text-zinc-700 text-[11px] tracking-widest">please hold</span>
+        </div>
+      ) : viewMode === "classic" ? (
+        <div className="flex flex-col gap-3 py-3 px-2 sm:px-0 animate-fadein">
           {filteredAndSorted.length === 0 ? (
             <div className="text-center py-20 text-zinc-600 text-sm">No albums match.</div>
           ) : (
@@ -384,7 +401,7 @@ export function Feed({ albums }: FeedProps) {
           )}
         </div>
       ) : (
-        <div className="px-2 sm:px-3 py-3">
+        <div className="px-2 sm:px-3 py-3 animate-fadein">
           {filteredAndSorted.length === 0 ? (
             <div className="text-center py-20 text-zinc-600 text-sm">No albums match.</div>
           ) : (
