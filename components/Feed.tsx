@@ -373,7 +373,7 @@ export function Feed({ albums }: FeedProps) {
           >
             <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
           </svg>
-          <span className="text-zinc-700 text-[11px] tracking-widest">please hold</span>
+          <span className="text-zinc-700 text-[11px] tracking-widest">still waiting</span>
         </div>
       ) : viewMode === "classic" ? (
         <div className="flex flex-col gap-3 py-3 px-2 sm:px-0 animate-fadein">
