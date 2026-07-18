@@ -5,9 +5,13 @@ import Image from "next/image";
 import { useAlbumStore, type VoteValue } from "@/store/albumStore";
 import { useAveragesStore } from "@/store/averagesStore";
 import { useUIStore } from "@/store/uiStore";
-import { getFlockifyUsername } from "@/data/uidToUsername";
+import { getFlockifyUsername, uidToUsername } from "@/data/uidToUsername";
 import { useAuth } from "@/context/AuthContext";
 import type { Album, GifComment } from "@/types";
+
+function displayName(userId: string) {
+  return uidToUsername[userId] ?? userId;
+}
 
 interface GifModalProps {
   album: Album;
@@ -42,6 +46,8 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const [comments, setComments]       = useState<GifComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(true);
   const [posting, setPosting]         = useState(false);
+  const [showVoters, setShowVoters]   = useState(false);
+  const [voters, setVoters]           = useState<{ userId: string; vote: number }[] | null>(null);
 
   function navigateTo(next: typeof initialAlbum) {
     setAlbum(next);
@@ -49,11 +55,13 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
     setQuery(""); setResults([]); setGifUrl(""); setPreview("");
     setPasteErr(false); setArtErr(false);
     setComments([]); setLoadingComments(true); setPosting(false);
+    setShowVoters(false); setVoters(null);
   }
 
   const backdropRef = useRef<HTMLDivElement>(null);
   const searchRef   = useRef<HTMLInputElement>(null);
   const pasteRef    = useRef<HTMLInputElement>(null);
+  const votersRef   = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
   const vote            = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
@@ -107,6 +115,28 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
 
   useEffect(() => { if (addMode === "search") searchRef.current?.focus(); }, [addMode]);
   useEffect(() => { if (addMode === "paste")  pasteRef.current?.focus();  }, [addMode]);
+
+  // Close voters popover when clicking outside
+  useEffect(() => {
+    if (!showVoters) return;
+    function handler(e: MouseEvent) {
+      if (votersRef.current && !votersRef.current.contains(e.target as Node)) setShowVoters(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showVoters]);
+
+  async function openVoters() {
+    setShowVoters(true);
+    if (voters !== null) return;
+    const res = await fetch(`/api/album-ratings?albumId=${encodeURIComponent(album.id)}`);
+    const data = await res.json();
+    const list = Object.entries(data.ratings as Record<string, number>)
+      .map(([userId, v]) => ({ userId, vote: v }))
+      .sort((a, b) => b.vote - a.vote);
+    setVoters(list);
+  }
+
   async function handleVote(newVote: VoteValue) {
     if (!user) {
       openSignInModal();
@@ -126,6 +156,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
       });
       const data = await res.json();
       if (typeof data.score === "number") setScore(album.id, data.score);
+      setVoters(null); // invalidate so next hover re-fetches with updated vote
     } catch { /* silent */ }
   }
 
@@ -344,10 +375,39 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
 
                 {/* Score bubble */}
                 {voterCount > 0 && (
-                  <span className="ml-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-bold tabular-nums text-white">
-                    {score >= 0 ? `+${score}` : String(score)}
-                    <span className="text-zinc-500 font-normal ml-1">{voterCount}v</span>
-                  </span>
+                  <div
+                    className="relative ml-1"
+                    ref={votersRef}
+                    onMouseEnter={openVoters}
+                    onMouseLeave={() => setShowVoters(false)}
+                  >
+                    <span
+                      onClick={openVoters}
+                      className="cursor-pointer px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-bold tabular-nums text-white"
+                    >
+                      {score >= 0 ? `+${score}` : String(score)}
+                    </span>
+
+                    {/* Voters popover */}
+                    {showVoters && (
+                      <div className="absolute left-0 top-full mt-1 z-50 w-44 bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl py-2 text-left">
+                        {voters === null ? (
+                          <p className="px-3 py-1 text-zinc-600 text-xs">Loading…</p>
+                        ) : voters.length === 0 ? (
+                          <p className="px-3 py-1 text-zinc-600 text-xs">No votes yet</p>
+                        ) : (
+                          voters.map(({ userId, vote: v }) => (
+                            <div key={userId} className="flex items-center justify-between px-3 py-1">
+                              <span className="text-zinc-300 text-xs truncate max-w-20">{displayName(userId)}</span>
+                              <span className={`text-xs font-bold tabular-nums shrink-0 ${v === 2 ? "text-amber-400" : v === 1 ? "text-green-400" : "text-red-400"}`}>
+                                {v === 2 ? "★" : v === 1 ? "▲" : "▼"}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
 
 {/* Streaming links */}
