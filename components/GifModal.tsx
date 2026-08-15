@@ -63,7 +63,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   const pasteRef    = useRef<HTMLInputElement>(null);
   const votersRef   = useRef<HTMLDivElement>(null);
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const vote            = (useAlbumStore((s) => s.votes[album.id]) ?? 0) as VoteValue | 0;
   const setVote         = useAlbumStore((s) => s.setVote);
 
@@ -181,6 +181,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
   });
 
   function startAddMode(mode: "search" | "paste") {
+    if (authLoading) return;
     if (!user) {
       openSignInModal();
       return;
