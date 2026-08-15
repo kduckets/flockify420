@@ -131,7 +131,6 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
               fill
               className="object-cover transition-opacity duration-200 group-hover:opacity-90"
               sizes="(max-width: 640px) 100vw, 38vw"
-              unoptimized
               onError={() => setArtworkError(true)}
             />
           ) : (

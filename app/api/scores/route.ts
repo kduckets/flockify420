@@ -5,27 +5,30 @@ export async function POST(req: NextRequest) {
   const { ids }: { ids: string[] } = await req.json();
   if (!ids?.length) return NextResponse.json({ scores: {}, commentCounts: {}, voterCounts: {} });
 
-  const [votesResults, commentResults, lastCommentSnap] = await Promise.all([
-    Promise.all(ids.map((id) => ref(`votes/${id}`).get())),
-    Promise.all(ids.map((id) => ref(`comments/${id}`).get())),
+  const [votesSnap, commentsSnap, lastCommentSnap] = await Promise.all([
+    ref("votes").get(),
+    ref("comments").get(),
     ref("lastComment").get(),
   ]);
+
+  const votesVal = (votesSnap.val() ?? {}) as Record<string, Record<string, number | string>>;
+  const commentsVal = (commentsSnap.val() ?? {}) as Record<string, Record<string, unknown>>;
 
   const scores: Record<string, number> = {};
   const commentCounts: Record<string, number> = {};
   const voterCounts: Record<string, number> = {};
   const starCounts: Record<string, number> = {};
 
-  ids.forEach((id, i) => {
-    const { score, count, stars } = scoreFromVotes(votesResults[i].val());
+  ids.forEach((id) => {
+    const { score, count, stars } = scoreFromVotes(votesVal[id] ?? null);
     if (count > 0) {
       scores[id] = score;
       voterCounts[id] = count;
       if (stars > 0) starCounts[id] = stars;
     }
 
-    const commentsVal = commentResults[i].val();
-    const commentCount = commentsVal ? Object.keys(commentsVal).length : 0;
+    const albumComments = commentsVal[id];
+    const commentCount = albumComments ? Object.keys(albumComments).length : 0;
     if (commentCount > 0) commentCounts[id] = commentCount;
   });
 

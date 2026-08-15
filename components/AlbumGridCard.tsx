@@ -28,7 +28,6 @@ export function AlbumGridCard({ album, allAlbums }: { album: Album; allAlbums: A
           fill
           className="object-cover transition-opacity duration-150 group-hover:opacity-70"
           sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
-          unoptimized
           onError={() => setArtErr(true)}
         />
 
