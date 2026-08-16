@@ -36,6 +36,7 @@ export function Feed({ albums }: FeedProps) {
   const [chipFilter, setChipFilter]     = useState<string | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
   const [visibleCount, setVisibleCount]   = useState(40);
+  const [dynamicLoaded, setDynamicLoaded] = useState(false);
   const searchRef   = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +70,8 @@ export function Feed({ albums }: FeedProps) {
         setDynamicAlbums(data.albums);
         fetchScores(data.albums.map((a) => a.id));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setDynamicLoaded(true));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -187,6 +189,17 @@ export function Feed({ albums }: FeedProps) {
 
   const votedCount  = allAlbums.filter((a) => votes[a.id]).length;
   const totalGifs   = Object.values(comments).reduce((n, arr) => n + arr.length, 0);
+
+  if (!dynamicLoaded) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-32 text-zinc-600">
+        <svg className="animate-spin" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        <span className="text-xs tracking-wide">still waiting</span>
+      </div>
+    );
+  }
 
   return (
     <div>
