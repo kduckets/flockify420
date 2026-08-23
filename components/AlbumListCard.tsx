@@ -189,7 +189,7 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
 
               {/* Description */}
               {album.description && (
-                <p className="mt-3 text-zinc-600 text-base leading-snug font-caveat">
+                <p className="mt-3 text-zinc-600 text-lg leading-snug">
                   {album.description}
                 </p>
               )}

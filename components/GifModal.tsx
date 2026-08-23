@@ -430,7 +430,7 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
 
               {/* Description */}
               {album.description && (
-                <p className="text-zinc-400 text-base leading-snug font-caveat">
+                <p className="text-zinc-400 text-lg leading-snug">
                   {album.description}
                 </p>
               )}
