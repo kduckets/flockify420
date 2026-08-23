@@ -189,9 +189,19 @@ export function AlbumListCard({ album, allAlbums, onDelete, onChipClick }: Album
 
               {/* Description */}
               {album.description && (
-                <p className="mt-3 text-zinc-600 text-lg leading-snug">
-                  {album.description}
-                </p>
+                <div className="mt-3">
+                  <p className="text-zinc-600 text-base leading-snug line-clamp-3">
+                    {album.description}
+                  </p>
+                  {album.description.length > 140 && (
+                    <button
+                      onClick={() => setGifModalOpen(true)}
+                      className="text-zinc-400 text-xs hover:text-zinc-600 cursor-pointer"
+                    >
+                      Read more
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
