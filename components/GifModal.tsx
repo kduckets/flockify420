@@ -375,7 +375,9 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                 </button>
 
                 {/* Score bubble */}
-                {voterCount > 0 && (
+                {(() => {
+                  const displayedScore = voterCount > 0 ? score : album.legacyScore;
+                  return (
                   <div
                     className="relative ml-1"
                     ref={votersRef}
@@ -384,9 +386,10 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                   >
                     <span
                       onClick={openVoters}
+                      title={voterCount > 0 ? `Score: ${score} · ${voterCount} voter${voterCount !== 1 ? "s" : ""}` : `Legacy score: ${album.legacyScore}`}
                       className="cursor-pointer px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-700 text-xs font-bold tabular-nums text-white"
                     >
-                      {score >= 0 ? `+${score}` : String(score)}
+                      {displayedScore >= 0 ? `+${displayedScore}` : String(displayedScore)}
                     </span>
 
                     {/* Voters popover */}
@@ -409,7 +412,8 @@ export function GifModal({ album: initialAlbum, allAlbums, onClose }: GifModalPr
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
 
 {/* Streaming links */}
                 <div className="ml-auto flex items-center gap-3">
