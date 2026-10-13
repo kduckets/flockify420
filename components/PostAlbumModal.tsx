@@ -439,10 +439,10 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
                   return (
                     <button
                       key={r.id}
-                      onClick={() => user && selectAlbum(r)}
-                      disabled={!user}
+                      onClick={() => (user ? selectAlbum(r) : setShowLogin(true))}
+                      title={user ? undefined : "Sign in to post this album"}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer ${
-                        user ? "hover:bg-zinc-900" : "opacity-50 cursor-not-allowed"
+                        user ? "hover:bg-zinc-900" : "opacity-50 hover:opacity-80"
                       }`}
                     >
                       <div className="relative w-12 h-12 shrink-0 rounded overflow-hidden bg-zinc-800">
@@ -458,11 +458,15 @@ export function PostAlbumModal({ onClose, existingSet, allGenres, allLabels, all
                         <p className="text-zinc-400 text-xs truncate">{r.artist}{r.releaseDate ? ` · ${r.releaseDate}` : ""}</p>
                         {r.genre.length > 0 && <p className="text-zinc-600 text-[11px] truncate">{r.genre.join(", ")}</p>}
                       </div>
-                      {exists && (
+                      {!user ? (
+                        <span className="shrink-0 text-[10px] px-2 py-0.5 bg-zinc-800 text-white rounded-full font-medium">
+                          Sign in →
+                        </span>
+                      ) : exists ? (
                         <span className="shrink-0 text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded-full font-medium">
                           In Flockify
                         </span>
-                      )}
+                      ) : null}
                     </button>
                   );
                 })}

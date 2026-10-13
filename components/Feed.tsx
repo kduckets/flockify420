@@ -204,15 +204,15 @@ export function Feed({ albums }: FeedProps) {
   return (
     <div>
       {/* Post an album */}
-      <div className="flex justify-center border-b border-zinc-900 py-2">
+      <div className="flex justify-center border-b border-zinc-900 py-3 px-3">
         <button
           onClick={() => setShowPostModal(true)}
-          className="flex items-center gap-2 text-zinc-600 hover:text-zinc-300 text-xs tracking-wide transition-colors cursor-pointer px-3 py-1.5"
+          className="flex items-center gap-2 w-full sm:w-auto justify-center bg-white hover:bg-zinc-200 text-black font-semibold text-sm tracking-wide transition-colors cursor-pointer px-5 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
           </svg>
-          post an album
+          Post an album
         </button>
       </div>
 
